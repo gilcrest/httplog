@@ -37,6 +37,12 @@ func HTTPLog(log zerolog.Logger, db *sql.DB, opts *Opts) Adapter {
 
 			ctx = SetRequestID(ctx)
 
+			err = logReqDispatch(log, aud, req, o)
+			if err != nil {
+				http.Error(w, "Unable to log request", http.StatusBadRequest)
+				return
+			}
+
 			rec := httptest.NewRecorder()
 			h.ServeHTTP(rec, req.WithContext(ctx))
 
