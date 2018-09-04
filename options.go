@@ -63,7 +63,7 @@ type ROpt struct {
 func newHTTPLogOpts() (*Opts, error) {
 
 	g := os.Getenv("GOPATH")
-	filepath := g + "/src/github.com/gilcrest/httpLogOpt.json"
+	filepath := g + "/src/github.com/gilcrest/httplog/httpLogOpt.json"
 
 	raw, err := ioutil.ReadFile(filepath)
 	if err != nil {
