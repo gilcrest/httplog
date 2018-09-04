@@ -2,6 +2,7 @@ package httplog
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,8 +14,6 @@ import (
 	"time"
 
 	"github.com/rs/zerolog"
-
-	"github.com/gilcrest/go-API-template/server/todo"
 )
 
 // APIAudit struct holds the http request attributes needed
@@ -38,6 +37,8 @@ type request struct {
 	Host             string `json:"host"`
 	Port             string `json:"port"`
 	Path             string `json:"path"`
+	RawQuery         string `json:"query"`
+	Fragment         string `json:"fragment"`
 	Header           string `json:"header"`
 	Body             string `json:"body"`
 	ContentLength    int64  `json:"content_length"`
@@ -50,11 +51,11 @@ type request struct {
 
 // logReqDispatch determines which, if any, of the logging methods
 // you wish to use will be employed
-func logReqDispatch(log zerolog.Logger, aud *APIAudit, req *http.Request, opts *Opts) error {
+func logReqDispatch(ctx context.Context, log zerolog.Logger, aud *APIAudit, req *http.Request, opts *Opts) error {
 
 	var err error
 
-	err = setRequest(log, aud, req)
+	err = setRequest(ctx, log, aud, req)
 	if err != nil {
 		return err
 	}
@@ -82,7 +83,7 @@ func logReqDispatch(log zerolog.Logger, aud *APIAudit, req *http.Request, opts *
 
 // setRequest populates several core fields (TimeStarted, ctx and RequestID)
 // for the APIAudit struct being passed into the function
-func setRequest(log zerolog.Logger, aud *APIAudit, req *http.Request) error {
+func setRequest(ctx context.Context, log zerolog.Logger, aud *APIAudit, req *http.Request) error {
 
 	var (
 		scheme string
@@ -124,16 +125,18 @@ func setRequest(log zerolog.Logger, aud *APIAudit, req *http.Request) error {
 		return err
 	}
 
-	aud.RequestID = todo.ID(req.Context())
+	aud.RequestID = RequestID(ctx)
 	aud.request.Proto = req.Proto
 	aud.request.ProtoMajor = req.ProtoMajor
 	aud.request.ProtoMinor = req.ProtoMinor
 	aud.request.Method = req.Method
 	aud.request.Scheme = scheme
 	aud.request.Host = host
-	aud.request.Body = body
 	aud.request.Port = port
 	aud.request.Path = req.URL.Path
+	aud.request.RawQuery = req.URL.RawQuery
+	aud.request.Fragment = req.URL.Fragment
+	aud.request.Body = body
 	aud.request.Header = headerJSON
 	aud.request.ContentLength = req.ContentLength
 	aud.request.TransferEncoding = strings.Join(req.TransferEncoding, ",")
