@@ -3,61 +3,16 @@ package httplog
 import (
 	"context"
 	"database/sql"
-	"net/http/httptest"
 	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
-// sets the start time in the APIAudit object
-func startTimer(aud *APIAudit) {
-	// set APIAudit TimeStarted to current time in UTC
-	loc, _ := time.LoadLocation("UTC")
-	aud.TimeStarted = time.Now().In(loc)
-}
-
-// stopTimer sets the stop time in the APIAudit object and
-// subtracts the stop time from the start time to determine the
-// service execution duration as this is after the response
-// has been written and sent
-func stopTimer(aud *APIAudit) {
-	loc, _ := time.LoadLocation("UTC")
-	aud.TimeFinished = time.Now().In(loc)
-	duration := aud.TimeFinished.Sub(aud.TimeStarted)
-	aud.Duration = duration
-}
-
-// SetResponse sets the response elements of the APIAudit payload
-func setResponse(log zerolog.Logger, aud *APIAudit, rec *httptest.ResponseRecorder) error {
-	// set ResponseCode from ResponseRecorder
-	aud.ResponseCode = rec.Code
-
-	// set Header JSON from Header map in ResponseRecorder
-	headerJSON, err := convertHeader(log, rec.HeaderMap)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
-	}
-	aud.response.Header = headerJSON
-
-	// Dump body to text using dumpBody function - need an http request
-	// struct, so use httptest.NewRequest to get one
-	req := httptest.NewRequest("POST", "http://example.com/foo", rec.Body)
-
-	body, err := dumpBody(req)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
-	}
-	aud.response.Body = body
-
-	return nil
-}
-
-// logRespDispatch determines which, if any, of the logging methods
+// logRespController determines which, if any, of the logging methods
 // you wish to use will be employed
-func logRespDispatch(ctx context.Context, log zerolog.Logger, db *sql.DB, aud *APIAudit, opts *Opts) error {
+func responseLogController(ctx context.Context, log zerolog.Logger, db *sql.DB, aud *APIAudit, opts *Opts) error {
+
 	if opts.Log2StdOut.Response.Enable {
 		logResp2Stdout(log, aud)
 	}

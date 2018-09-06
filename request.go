@@ -7,58 +7,17 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"net/http/httputil"
-	"strings"
-	"time"
 
 	"github.com/rs/zerolog"
 )
 
-// APIAudit struct holds the http request attributes needed
-// for auditing an http request
-type APIAudit struct {
-	RequestID    string        `json:"request_id"`
-	TimeStarted  time.Time     `json:"time_started"`
-	TimeFinished time.Time     `json:"time_finished"`
-	Duration     time.Duration `json:"time_in_millis"`
-	ResponseCode int           `json:"response_code"`
-	request
-	response request
-}
-
-type request struct {
-	Proto            string `json:"protocol"`
-	ProtoMajor       int    `json:"protocol_major"`
-	ProtoMinor       int    `json:"protocol_minor"`
-	Method           string `json:"request_method"`
-	Scheme           string `json:"scheme"`
-	Host             string `json:"host"`
-	Port             string `json:"port"`
-	Path             string `json:"path"`
-	RawQuery         string `json:"query"`
-	Fragment         string `json:"fragment"`
-	Header           string `json:"header"`
-	Body             string `json:"body"`
-	ContentLength    int64  `json:"content_length"`
-	TransferEncoding string `json:"transfer_encoding"`
-	Close            bool   `json:"close"`
-	Trailer          string `json:"trailer"`
-	RemoteAddr       string `json:"remote_address"`
-	RequestURI       string `json:"request_uri"`
-}
-
-// logReqDispatch determines which, if any, of the logging methods
+// requestLogController determines which, if any, of the logging methods
 // you wish to use will be employed
-func logReqDispatch(ctx context.Context, log zerolog.Logger, aud *APIAudit, req *http.Request, opts *Opts) error {
+func requestLogController(ctx context.Context, log zerolog.Logger, aud *APIAudit, req *http.Request, opts *Opts) error {
 
 	var err error
-
-	err = setRequest(ctx, log, aud, req)
-	if err != nil {
-		return err
-	}
 
 	if opts.HTTPUtil.DumpRequest.Enable {
 		requestDump, err := httputil.DumpRequest(req, opts.HTTPUtil.DumpRequest.Body)
@@ -77,73 +36,6 @@ func logReqDispatch(ctx context.Context, log zerolog.Logger, aud *APIAudit, req 
 			return err
 		}
 	}
-
-	return nil
-}
-
-// setRequest populates several core fields (TimeStarted, ctx and RequestID)
-// for the APIAudit struct being passed into the function
-func setRequest(ctx context.Context, log zerolog.Logger, aud *APIAudit, req *http.Request) error {
-
-	var (
-		scheme string
-	)
-
-	// split host and port out for cleaner logging
-	host, port, err := net.SplitHostPort(req.Host)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
-	}
-
-	// determine if the request is an HTTPS request
-	isHTTPS := req.TLS != nil
-
-	if isHTTPS {
-		scheme = "https"
-	} else {
-		scheme = "http"
-	}
-
-	// convert the Header map from the request to a JSON string
-	headerJSON, err := convertHeader(log, req.Header)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
-	}
-
-	// convert the Trailer map from the request to a JSON string
-	trailerJSON, err := convertHeader(log, req.Trailer)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
-	}
-
-	body, err := dumpBody(req)
-	if err != nil {
-		log.Error().Err(err).Msg("")
-		return err
-	}
-
-	aud.RequestID = RequestID(ctx)
-	aud.request.Proto = req.Proto
-	aud.request.ProtoMajor = req.ProtoMajor
-	aud.request.ProtoMinor = req.ProtoMinor
-	aud.request.Method = req.Method
-	aud.request.Scheme = scheme
-	aud.request.Host = host
-	aud.request.Port = port
-	aud.request.Path = req.URL.Path
-	aud.request.RawQuery = req.URL.RawQuery
-	aud.request.Fragment = req.URL.Fragment
-	aud.request.Body = body
-	aud.request.Header = headerJSON
-	aud.request.ContentLength = req.ContentLength
-	aud.request.TransferEncoding = strings.Join(req.TransferEncoding, ",")
-	aud.request.Close = req.Close
-	aud.request.Trailer = trailerJSON
-	aud.request.RemoteAddr = req.RemoteAddr
-	aud.request.RequestURI = req.RequestURI
 
 	return nil
 }
