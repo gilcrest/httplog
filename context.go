@@ -22,6 +22,16 @@ var (
 	requestFragment = contextKey("RequestFragment")
 )
 
+func setRequest2Context(ctx context.Context, aud *APIAudit) context.Context {
+	ctx = SetRequestHost(ctx, aud)
+	ctx = SetRequestPort(ctx, aud)
+	ctx = SetRequestPath(ctx, aud)
+	ctx = SetRequestRawQuery(ctx, aud)
+	ctx = SetRequestFragment(ctx, aud)
+
+	return ctx
+}
+
 // SetRequestID adds a unique ID as RequestID to the context
 func SetRequestID(ctx context.Context) context.Context {
 	// get byte Array representation of guid from xid package (12 bytes)
