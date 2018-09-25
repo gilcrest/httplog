@@ -10,11 +10,22 @@ If you plan to use the Database Logging feature of httplog, you will need to ext
 
 ## Overview
 
-httplog logs http requests and responses. It’s highly configurable, e.g. in production, log all response and requests, but don’t log the body or headers, in your dev environment log everything and so on. httplog also has different ways to log depending on your preference — structured logging via JSON, relational database logging or just plain standard library logging.
+**httplog** logs http requests and responses. It’s highly configurable, e.g. in production, log all response and requests, but don’t log the body or headers, in your dev environment log everything and so on. httplog also has different ways to log depending on your preference — structured logging via JSON, relational database logging or just plain standard library logging.
 
 httplog has logic to turn on/off logging based on options you can either pass in to the middleware handler or from a JSON input file included with the library.
 
 httplog offers three middleware choices, each of which adhere to fairly common middleware patterns: a simple HandlerFunc (`LogHandlerFunc`), a function (`LogHandler`) that takes a handler and returns a handler (aka Constructor) (`func (http.Handler) http.Handler`) often used with [alice](https://github.com/justinas/alice) and finally a function (`LogAdapter`) that returns an Adapter type (based on [Mat Ryer’s post](https://medium.com/@matryer/writing-middleware-in-golang-and-how-go-makes-it-so-much-fun-4375c1246e81)). An `httplog.Adapt` function and `httplog.Adapter` type are provided.
+
+Beyond logging request and response elements, **httplog** creates a unique id for each incoming request (using [xid](https://github.com/rs/xid)) and sets it (and a few other key request elements) into the request context. You can access these context items using provided helper functions, including a function that returns an audit struct you can add to response payloads that provide clients with helpful information for support.
+
+## Features
+
+- [Middleware](#middleware)
+- [configurable http request/response logging](#configurable-logging) (ability to turn on and off logging style based on file configuration)
+  - [Log Style 1](#log-style-1-structured-via-json): Structured (JSON), leveled (debug, error, info, etc.) logging to stdout
+  - [Log Style 2](#log-style-2-relational-db-logging-via-postgreSQL): Relational database (PostgreSQL) logging (certain data points broken out into standard column datatypes, request/response headers and body stored in TEXT datatype columns).
+  - [Log Style 3](#log-style-3-httputil-dumpRequest-or-dumpResponse): httputil DumpRequest or DumpResponse - there's not much to this, really - httplog just allows you to turn these standard library functions on or off through the configuration options
+
 
 ### Middleware
 
@@ -103,13 +114,6 @@ func (s *server) routes() error {
 }
 ```
 
-## Features
-
-- [configurable http request/response logging](#configurable-logging) (ability to turn on and off logging style based on file configuration)
-  - [Log Style 1](#log-style-1-structured-via-json): Structured (JSON), leveled (debug, error, info, etc.) logging to stdout
-  - [Log Style 2](#log-style-2-relational-db-logging-via-postgreSQL): Relational database (PostgreSQL) logging (certain data points broken out into standard column datatypes, request/response headers and body stored in TEXT datatype columns).
-  - [Log Style 3](#log-style-3-httputil-dumpRequest-or-dumpResponse): httputil DumpRequest or DumpResponse - there's not much to this, really - httplog just allows you to turn these standard library functions on or off through the configuration options
-
 ----
 
 ### Configurable Logging
@@ -155,11 +159,12 @@ Set `log_2DB.enable` to true in the [HTTP Log Config File](#Log-Config-File) to 
 
 ##### Logging Database Table
 
-In total 19 fields are logged as part of the database transaction.
+In total 20 fields are logged as part of the database transaction.
 
 | Column Name   | Datatype    | Description          |
 | ------------- | ----------- | -------------------- |
 | request_id                | VARCHAR(100)  | Unique Request ID
+| client_id                 | VARCHAR(100)  | API Client ID
 | request_timestamp         | TIMESTAMP     | UTC time request received
 | response_code             | INTEGER       | HTTP Response Code
 | response_timestamp        | TIMESTAMP     | UTC time response sent
@@ -203,7 +208,7 @@ User-Agent: PostmanRuntime/7.1.1
 
 #### Log Config File
 
-`/input/httpLogOpt.json`
+`httpLogOpt.json`
 
 ```json
 {
@@ -245,107 +250,6 @@ User-Agent: PostmanRuntime/7.1.1
 
 ----
 
-### HTTP JSON Error Responses
-
-For error responses, the api sends a simple structured JSON message in the response body, similar to [Stripe](https://stripe.com/docs/api#errors), [Uber](https://developer.uber.com/docs/riders/guides/errors) and many others, e.g.:
-
-```json
-{
-    "error": {
-        "type": "validation_failed",
-        "message": "Username is a required field"
-    }
-}
-```
-
-This is achieved by wrapping the final true app handler (in the below case, CreateUser) inside an ErrHandler type within the dispatch function - `eh.ErrHandler{Env: env, H: handler.CreateUser}`. Note I’m passing in a global environment type as well. I chose this method based on a great article by Matt Silverlock on his blog [here](https://elithrar.github.io/article/http-handler-error-handling-revisited/).
-
-```go
-package dispatch
-
-import (
-    "github.com/gilcrest/go-API-template/appuser/handler"
-    "github.com/gilcrest/go-API-template/env"
-    eh "github.com/gilcrest/go-API-template/server/errorHandler"
-    "github.com/gilcrest/go-API-template/server/middleware"
-    "github.com/gorilla/mux"
-)
-
-// Dispatch is a way of organizing routing to handlers (versioning as well)
-func Dispatch(env *env.Env, rtr *mux.Router) *mux.Router {
-
-    // initialize new instance of APIAudit
-    audit := new(middleware.APIAudit)
-
-    // match only POST requests on /api/appuser/create
-    // This is the original (v1) version for the API and the response for this
-    // will never change with versioning in order to maintain a stable contract
-    rtr.Handle("/appuser", middleware.Adapt(eh.ErrHandler{Env: env, H: handler.CreateUser}, middleware.LogRequest(env, audit), middleware.LogResponse(env, audit))).
-        Methods("POST").
-        Headers("Content-Type", "application/json")
-
-    // match only POST requests on /api/v1/appuser/create
-    rtr.Handle("/v1/appuser", middleware.Adapt(eh.ErrHandler{Env: env, H: handler.CreateUser}, middleware.LogRequest(env, audit), middleware.LogResponse(env, audit))).
-        Methods("POST").
-        Headers("Content-Type", "application/json")
-
-    return rtr
-}
-```
-
-I’m using Matt’s article almost word for word for error handling, but made a few tweaks so that I could return a structured JSON response. Check out the server/errorHandler package for the full details.
-
-The package makes error handling pretty nice — given the wrapper logic, you’ll always return a pretty good looking error and setting up errors is pretty easy.
-
-When creating errors within your app, you don’t have to have every error take the HTTPErr form — you can return normal errors lower down in the code and, depending on how you organize your code, you can catch and form the HTTPErr at a very high level so you’re not having to deal with populating a cumbersome struct all throughout your code. The below code snippet illustrates catching any exception thrown from within the Create method and giving the error a certain Error Code and Error Type. Within the Create method itself, errors are set using the Go error "standard".
-
-```go
-tx, err := usr.Create(ctx, env)
-if err != nil {
-    return errorHandler.HTTPErr{
-        Code: http.StatusBadRequest,
-        Type: "validation_failed",
-        Err:  err,
-    }
-}
-```
-
-The SetErr method of the HTTPErr struct allows you to initialize the struct with some default values and add the actual error on the fly. For instance, below as part of my super high level edit checks on my service inputs, the HTTPErr object is initialized at the beginning of the function and then edit checks are performed to allow for brevity in error creation.
-
-```go
-func newUser(ctx context.Context, env *env.Env, cur *createUserRequest) (*appuser.User, error) {
-
-    // declare a new instance of appuser.User
-    usr := new(appuser.User)
-
-    // initialize an errorHandler with the default Code and Type for
-    // service validations (Err is set to nil as it will be set later)
-    e := errorHandler.HTTPErr{
-        Code: http.StatusBadRequest,
-        Type: "validation_error",
-        Err:  nil,
-    }
-
-    // for each field you can go through whatever validations you wish
-    // and use the SetErr method of the HTTPErr struct to add the proper
-    // error text
-    switch {
-    // Username is required
-    case cur.Username == "":
-        e.SetErr("Username is a required field")
-        return nil, e
-    // Username cannot be blah...
-    case cur.Username == "blah":
-        e.SetErr("Username cannot be blah")
-        return nil, e
-    default:
-        usr.Username = cur.Username
-    }
-    ...
-```
-
-----
-
 ### Helpful Resources I've used in this library (outside of the standard, yet amazing blog.golang.org and golang.org/doc/, etc.)
 
 websites/youtube
@@ -363,5 +267,3 @@ Blog/Medium Posts
 
 - [The http Handler Wrapper Technique in #golang, updated -- by Mat Ryer](https://medium.com/@matryer/the-http-handler-wrapper-technique-in-golang-updated-bc7fbcffa702)
 - [Writing middleware in #golang and how Go makes it so much fun. -- by Mat Ryer](https://medium.com/@matryer/writing-middleware-in-golang-and-how-go-makes-it-so-much-fun-4375c1246e81)
-- [http.Handler and Error Handling in Go -- by Matt Silverlock](https://elithrar.github.io/article/http-handler-error-handling-revisited/)
-- [How to correctly use context.Context in Go 1.7 -- by Jack Lindamood](https://medium.com/@cep21/how-to-correctly-use-context-context-in-go-1-7-8f2c0fafdf39)
