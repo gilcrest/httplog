@@ -15,6 +15,7 @@ import (
 // for auditing an http request
 type APIAudit struct {
 	RequestID    string        `json:"request_id"`
+	ClientID     string        `json:"client_id"`
 	TimeStarted  time.Time     `json:"time_started"`
 	TimeFinished time.Time     `json:"time_finished"`
 	Duration     time.Duration `json:"time_in_millis"`
