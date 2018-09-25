@@ -8,7 +8,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-// LogHandlerFunc records and logs as much as possible about an
+// LogHandlerFunc middleware records and logs as much as possible about an
 // incoming HTTP request and response
 func LogHandlerFunc(next http.HandlerFunc, log zerolog.Logger, db *sql.DB, o *Opts) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
@@ -19,7 +19,7 @@ func LogHandlerFunc(next http.HandlerFunc, log zerolog.Logger, db *sql.DB, o *Op
 		)
 
 		if o == nil {
-			opts, err = newHTTPLogOpts()
+			opts, err = newOpts()
 			if err != nil {
 				log.Error().Err(err).Msg("")
 				return
@@ -98,7 +98,7 @@ func LogHandler(log zerolog.Logger, db *sql.DB, o *Opts) (mw func(http.Handler) 
 			)
 
 			if o == nil {
-				opts, err = newHTTPLogOpts()
+				opts, err = newOpts()
 				if err != nil {
 					log.Error().Err(err).Msg("")
 					return
@@ -179,7 +179,7 @@ func LogAdapter(log zerolog.Logger, db *sql.DB, o *Opts) Adapter {
 			)
 
 			if o == nil {
-				opts, err = newHTTPLogOpts()
+				opts, err = newOpts()
 				if err != nil {
 					log.Error().Err(err).Msg("")
 					return
