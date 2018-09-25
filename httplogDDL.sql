@@ -6,7 +6,7 @@ create table api.audit_log
 	request_id varchar(100) not null
 		constraint audit_log_pkey
 			primary key,
-    client_id varchar(100),        
+  client_id varchar(100),
 	request_timestamp timestamp,
 	response_code integer,
 	response_timestamp timestamp,
