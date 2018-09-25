@@ -98,24 +98,25 @@ func logReqResp2Db(ctx context.Context, db *sql.DB, aud *APIAudit, opts *Opts) e
 	// Prepare the sql statement using bind variables
 	stmt, err := tx.PrepareContext(ctx, `select api.log_request (
 		p_request_id => $1,
-		p_request_timestamp => $2,
-		p_response_code => $3,
-		p_response_timestamp => $4,
-		p_duration_in_millis => $5,
-		p_protocol => $6,
-		p_protocol_major => $7,
-		p_protocol_minor => $8,
-		p_request_method => $9,
-		p_scheme => $10,
-		p_host => $11,
-		p_port => $12,
-		p_path => $13,
-		p_remote_address => $14,
-		p_request_content_length => $15,
-		p_request_header => $16,
-		p_request_body => $17,
-		p_response_header => $18,
-		p_response_body => $19)`)
+		p_client_id => $2,
+		p_request_timestamp => $3,
+		p_response_code => $4,
+		p_response_timestamp => $5,
+		p_duration_in_millis => $6,
+		p_protocol => $7,
+		p_protocol_major => $8,
+		p_protocol_minor => $9,
+		p_request_method => $10,
+		p_scheme => $11,
+		p_host => $12,
+		p_port => $13,
+		p_path => $14,
+		p_remote_address => $15,
+		p_request_content_length => $16,
+		p_request_header => $17,
+		p_request_body => $18,
+		p_response_header => $19,
+		p_response_body => $20)`)
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
@@ -125,24 +126,25 @@ func logReqResp2Db(ctx context.Context, db *sql.DB, aud *APIAudit, opts *Opts) e
 
 	rows, err := stmt.QueryContext(ctx,
 		aud.RequestID,             //$1
-		aud.TimeStarted,           //$2
-		aud.ResponseCode,          //$3
-		aud.TimeFinished,          //$4
-		durMS,                     //$5
-		aud.request.Proto,         //$6
-		aud.request.ProtoMajor,    //$7
-		aud.request.ProtoMinor,    //$8
-		aud.request.Method,        //$9
-		aud.request.Scheme,        //$10
-		aud.request.Host,          //$11
-		aud.request.Port,          //$12
-		aud.request.Path,          //$13
-		aud.request.RemoteAddr,    //$14
-		aud.request.ContentLength, //$15
-		reqHdr,   //$16
-		reqBody,  //$17
-		respHdr,  //$18
-		respBody) //$19
+		aud.ClientID,              //$2
+		aud.TimeStarted,           //$3
+		aud.ResponseCode,          //$4
+		aud.TimeFinished,          //$5
+		durMS,                     //$6
+		aud.request.Proto,         //$7
+		aud.request.ProtoMajor,    //$8
+		aud.request.ProtoMinor,    //$9
+		aud.request.Method,        //$10
+		aud.request.Scheme,        //$11
+		aud.request.Host,          //$12
+		aud.request.Port,          //$13
+		aud.request.Path,          //$14
+		aud.request.RemoteAddr,    //$15
+		aud.request.ContentLength, //$16
+		reqHdr,   //$17
+		reqBody,  //$18
+		respHdr,  //$19
+		respBody) //$20
 
 	if err != nil {
 		log.Error().Err(err).Msg("")
