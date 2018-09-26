@@ -21,15 +21,16 @@ Beyond logging request and response elements, **httplog** creates a unique id fo
 ## Features
 
 - [Middleware](#middleware)
-- [configurable http request/response logging](#configurable-logging) (ability to turn on and off logging style based on file configuration)
+- [Configurable http request/response logging](#configurable-logging) (ability to turn on and off logging style based on file configuration)
   - [Log Style 1](#log-style-1-structured-via-json): Structured (JSON), leveled (debug, error, info, etc.) logging to stdout
   - [Log Style 2](#log-style-2-relational-db-logging-via-postgreSQL): Relational database (PostgreSQL) logging (certain data points broken out into standard column datatypes, request/response headers and body stored in TEXT datatype columns).
   - [Log Style 3](#log-style-3-httputil-dumpRequest-or-dumpResponse): httputil DumpRequest or DumpResponse - there's not much to this, really - httplog just allows you to turn these standard library functions on or off through the configuration options
-
+- [Add Unique ID and Key Request Elements to Context](#add-unique-id-and-key-request-elements-to-context)
+- [Retrieve Unique ID and Key Request Elements from Context](#retrieve-unique-id-and-key-request-elements-from-context)
 
 ### Middleware
 
-Each middleware takes the same parameters:
+Each middleware takes a minimum of three parameters:
 
 - `log` - an instance of zerolog.logger
 
@@ -37,33 +38,42 @@ Each middleware takes the same parameters:
   - You can set this parameter to nil if you're not planning to log to PostgreSQL
 
 - `o` - an `httplog.Opts` struct which has the all of the logging configurations
-  - You can set this parameter to nil and httplog will pull defaults from the provided json file
-  - Use the `httplog.NewOpts` constructor to get an Opts struct with all log flags set to false
+  - You can set this parameter to nil and httplog will use options from the `httpLogOpt.json` file
+  - If you prefer not to use the `httpLogOpt.json` file, the `httplog.NewOpts` constructor provides an Opts struct with all log flags set to false and you can set the options through code
 
 ```go
-// Log2StdOut
-opts.Log2StdOut.Request.Enable = false
-opts.Log2StdOut.Request.Options.Header = false
-opts.Log2StdOut.Request.Options.Body = false
-opts.Log2StdOut.Response.Enable = false
-opts.Log2StdOut.Response.Options.Header = false
-opts.Log2StdOut.Response.Options.Body = false
+// NewOpts constructs an Opts struct
+// By Default all logging is turned off
+func NewOpts() *Opts {
 
-// Log2DB
-opts.Log2DB.Enable = false
-opts.Log2DB.Request.Header = false
-opts.Log2DB.Request.Body = false
-opts.Log2DB.Response.Header = false
-opts.Log2DB.Response.Body = false
+    opts := new(Opts)
 
-// DumpRequest
-opts.HTTPUtil.DumpRequest.Body = false
-opts.HTTPUtil.DumpRequest.Body = false
+    // Log2StdOut
+    opts.Log2StdOut.Request.Enable = false
+    opts.Log2StdOut.Request.Options.Header = false
+    opts.Log2StdOut.Request.Options.Body = false
+    opts.Log2StdOut.Response.Enable = false
+    opts.Log2StdOut.Response.Options.Header = false
+    opts.Log2StdOut.Response.Options.Body = false
+
+    // Log2DB
+    opts.Log2DB.Enable = false
+    opts.Log2DB.Request.Header = false
+    opts.Log2DB.Request.Body = false
+    opts.Log2DB.Response.Header = false
+    opts.Log2DB.Response.Body = false
+
+    // DumpRequest
+    opts.HTTPUtil.DumpRequest.Body = false
+    opts.HTTPUtil.DumpRequest.Body = false
+
+    return opts
+}
 ```
 
 #### Middleware Examples
 
-The below examples are taken from [go-API-template](https://github.com/gilcrest/go-API-template). It uses all three middlewares for example sake. You obviously would choose 1 pattern and stick to that (for the most part).
+The below examples are taken from [go-API-template](https://github.com/gilcrest/go-API-template). It uses all three httplog middlewares for example sake. You obviously would choose 1 pattern and stick to that (for the most part).
 
 ```go
 package app
@@ -80,7 +90,7 @@ func (s *server) routes() error {
     // Get a logger instance from the server struct
     log := s.logger
 
-    // Get logging Database to pass into httplog
+    // Get pointer to logging database to pass into httplog
     // Only need this if you plan to use the PostgreSQL
     // logging style of httplog
     logdb, err := s.ds.DB(datastore.LogDB)
@@ -88,25 +98,40 @@ func (s *server) routes() error {
         return err
     }
 
+    // httplog.NewOpts gets a new httplog.Opts struct
+    // (with all flags set to false)
+    opts := httplog.NewOpts()
+
+    // For the examples below, I chose to turn on db logging only
+    // Log the request headers only (body has password on this api!)
+    // Log both the response headers and body
+    opts.Log2DB.Enable = true
+    opts.Log2DB.Request.Header = true
+    opts.Log2DB.Response.Header = true
+    opts.Log2DB.Response.Body = true
+
     // HandlerFunc middleware example
-    // match only POST requests on /v1/adapter/user
-    // having a Content-Type header = application/json
+    // function takes an http.HandlerFunc and returns an http.HandlerFunc
+    // Also, match only POST requests with Content-Type header = application/json
     s.router.HandleFunc("/v1/handlefunc/user",
-        httplog.LogHandlerFunc(s.handleUserCreate(), log, logdb, nil)).
+        httplog.LogHandlerFunc(s.handleUserCreate(), log, logdb, opts)).
         Methods("POST").
         Headers("Content-Type", "application/json")
 
+    // function (`LogHandler`) that takes a handler and returns a handler (aka Constructor)
+    // (`func (http.Handler) http.Handler`)    - used with alice
+    // Also, match only POST requests with Content-Type header = application/json
     s.router.Handle("/v1/alice/user",
-        alice.New(httplog.LogHandler(log, logdb, nil)).
+        alice.New(httplog.LogHandler(log, logdb, opts)).
             ThenFunc(s.handleUserCreate())).
         Methods("POST").
         Headers("Content-Type", "application/json")
 
-    // match only POST requests on /v1/adapter/user
-    // having a Content-Type header = application/json
+    // Adapter Type middleware example
+    // Also, match only POST requests with Content-Type header = application/json
     s.router.Handle("/v1/adapter/user",
         httplog.Adapt(s.handleUserCreate(),
-            httplog.LogAdapter(log, logdb, nil))).
+            httplog.LogAdapter(log, logdb, opts))).
         Methods("POST").
         Headers("Content-Type", "application/json")
 
@@ -118,16 +143,10 @@ func (s *server) routes() error {
 
 ### Configurable Logging
 
-Configurable http request/response logging is achieved in one of two ways:
+The boolean fields found within the Opts struct type drive the rules for what logging features are turned on.  You can have one to three log styles turned on using this file (or none, if you so choose).
 
-1. Pass an `Opts` struct when using one of the given middleware functions.
-- `httplog.NewOpts` will return an Opts struct with all logging turned off. You can then choose whichever logging style and option you like.
-
-1. through import/marshaling of a JSON file into the struct type `HTTPLogOpts`. The boolean fields found within this type drive the rules for what logging features are turned on.  You can have one to three log styles turned on using this file (or none, if you so choose).  I will eventually make this dynamic using some type of cacheing mechanism for the various choices.
-
-#### Unique Request ID
-
-Each request is given a 20 character Unique Request ID generated by [xid](https://github.com/rs/xid). This unique ID is added to the Request Response Header as well as populated throughout each log type for easy tracking.
+1. Pass an `Opts` struct when using one of the given middleware functions. `httplog.NewOpts` will return an Opts struct with all logging turned off. You can then set whichever logging style and option you like.
+1. If you do not pass an Opts struct to one of the provided middlewares, there is code in each that will import/marshal the `httpLogOpt.json` file found in the root of the httplog library into the `Opts` struct type. You can change log configuration by altering the boolean values present in this file.
 
 #### Log Style 1: Structured via JSON
 
@@ -206,6 +225,26 @@ User-Agent: PostmanRuntime/7.1.1
 {"username": "repoMan","mobile_ID": "1-800-repoman","email":"repoman@alwaysintense.com","First_Name":"Otto","Last_Name":"Maddox"}
 ```
 
+### Add Unique ID and Key Request Elements to Context
+
+**httplog** middleware creates a unique ID to track each request. In addition, it adds several request elements to the request Context that can be accessed with helper functions later.
+
+#### Unique Request ID
+
+Each request is given a 20 character Unique Request ID generated by [xid](https://github.com/rs/xid). This unique ID is populated throughout each log type for easy tracking. This ID is also meant to be sent back to the client of your API either in the response header or response body (see [below](#retrieve-unique-id-and-key-request-elements-from-context) for further help on including httplog context items in a response body).
+
+#### Other Request Elements added to Context
+
+In addition to the generated Unique ID, httplog also adds the following request elements to the context:
+
+- Host
+- Port
+- Path
+- Raw Query
+- Fragment
+
+### Retrieve Unique ID and Key Request Elements from Context
+
 #### Log Config File
 
 `httpLogOpt.json`
@@ -214,35 +253,35 @@ User-Agent: PostmanRuntime/7.1.1
 {
     "log_json": {
         "Request": {
-            "enable": true,
+            "enable": false,
             "Options": {
-                "header": true,
-                "body": true
+                "header": false,
+                "body": false
             }
         },
         "Response": {
-            "enable": true,
+            "enable": false,
             "Options": {
-                "header": true,
-                "body": true
+                "header": false,
+                "body": false
             }
         }
     },
     "log_2DB": {
         "enable": false,
         "Request": {
-            "header": true,
-            "body": true
+            "header": false,
+            "body": false
         },
         "Response": {
-            "header": true,
-            "body": true
+            "header": false,
+            "body": false
         }
     },
     "httputil": {
         "DumpRequest": {
             "enable": false,
-            "body": true
+            "body": false
         }
     }
 }
