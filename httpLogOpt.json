@@ -1,35 +1,35 @@
 {
     "log_json": {
         "Request": {
-            "enable": true,
+            "enable": false,
             "Options": {
-                "header": true,
-                "body": true
+                "header": false,
+                "body": false
             }
         },
         "Response": {
-            "enable": true,
+            "enable": false,
             "Options": {
-                "header": true,
-                "body": true
+                "header": false,
+                "body": false
             }
         }
     },
     "log_2DB": {
         "enable": false,
         "Request": {
-            "header": true,
-            "body": true
+            "header": false,
+            "body": false
         },
         "Response": {
-            "header": true,
-            "body": true
+            "header": false,
+            "body": false
         }
     },
     "httputil": {
         "DumpRequest": {
             "enable": false,
-            "body": true
+            "body": false
         }
     }
 }
