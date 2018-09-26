@@ -8,15 +8,15 @@ import (
 
 // Opts represent HTTP Logging Options
 type Opts struct {
-	Log2StdOut *Log2StdOut `json:"log_json"`
-	Log2DB     *Log2DB     `json:"log_2DB"`
-	HTTPUtil   *HTTPUtil   `json:"httputil"`
+	Log2StdOut Log2StdOut `json:"log_json"`
+	Log2DB     Log2DB     `json:"log_2DB"`
+	HTTPUtil   HTTPUtil   `json:"httputil"`
 }
 
 // HTTPUtil struct hold the options for using
 // the net/http/httputil package
 type HTTPUtil struct {
-	DumpRequest *DumpRequest
+	DumpRequest DumpRequest
 }
 
 // DumpRequest holds the options for the
@@ -29,8 +29,8 @@ type DumpRequest struct {
 // Log2StdOut struct holds the options for logging
 // requests and responses to stdout (using zerolog)
 type Log2StdOut struct {
-	Request  *L2SOpt
-	Response *L2SOpt
+	Request  L2SOpt
+	Response L2SOpt
 }
 
 // L2SOpt is the log2StdOut Options
@@ -38,7 +38,7 @@ type Log2StdOut struct {
 // the rOpt Header and Body accordingly if you want to write those
 type L2SOpt struct {
 	Enable  bool `json:"enable"`
-	Options *ROpt
+	Options ROpt
 }
 
 // Log2DB struct holds the options for logging to a database
@@ -48,8 +48,8 @@ type L2SOpt struct {
 // Requests/Responses will only be logged if Enable is true
 type Log2DB struct {
 	Enable   bool `json:"enable"`
-	Request  *ROpt
-	Response *ROpt
+	Request  ROpt
+	Response ROpt
 }
 
 // ROpt is the http request/response logging options
@@ -88,6 +88,7 @@ func newOpts() (*Opts, error) {
 // NewOpts constructs an Opts struct
 // By Default all logging is turned off
 func NewOpts() *Opts {
+
 	opts := new(Opts)
 
 	// Log2StdOut
