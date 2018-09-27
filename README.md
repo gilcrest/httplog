@@ -245,6 +245,28 @@ In addition to the generated Unique ID, httplog also adds the following request 
 
 ### Retrieve Unique ID and Key Request Elements from Context
 
+In order to retrieve particular key:value pairs set to the request context, the following helper functions are provided:
+
+```go
+// RequestID gets the Request ID from the context.
+func RequestID(ctx context.Context) string
+
+// RequestHost gets the request host from the context
+func RequestHost(ctx context.Context) string
+
+// RequestPort gets the request port from the context
+func RequestPort(ctx context.Context) string
+
+// RequestPath gets the request URL from the context
+func RequestPath(ctx context.Context) string
+
+// RequestRawQuery gets the request Query string details from the context
+func RequestRawQuery(ctx context.Context) string
+
+// RequestFragment gets the request Fragment details from the context
+func RequestFragment(ctx context.Context) string
+```
+
 #### Log Config File
 
 `httpLogOpt.json`
