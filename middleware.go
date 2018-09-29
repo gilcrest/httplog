@@ -1,3 +1,24 @@
+// Package httplog logs http requests and responses. It’s highly configurable,
+// e.g. in production, log all response and requests, but don’t log
+// the body or headers, in your dev environment log everything and so
+// on. httplog also has different ways to log depending on your
+// preference — structured logging via JSON, relational database
+// logging or just plain standard library logging. httplog has logic
+// to turn on/off logging based on options you can either pass in to
+// the middleware handler or from a JSON input file included with the
+// library. httplog offers three middleware choices, each of which
+// adhere to fairly common middleware patterns: a simple HandlerFunc
+// (`LogHandlerFunc`), a function (`LogHandler`) that takes a handler
+// and returns a handler (aka Constructor) (`func (http.Handler) http.Handler`)
+// often used with alice (https://github.com/justinas/alice) and finally a
+// function (`LogAdapter`) that returns an Adapter type. An `httplog.Adapt`
+// function and `httplog.Adapter` type are provided. Beyond logging request
+// and response elements, httplog creates a unique id for each incoming
+// request (using xid (https://github.com/rs/xid)) and sets it (and a few
+// other key request elements) into the request context. You can access
+// these context items using provided helper functions, including a function
+// that returns an audit struct you can add to response payloads that provide
+// clients with helpful information for support.
 package httplog
 
 import (
@@ -18,13 +39,10 @@ func LogHandlerFunc(next http.HandlerFunc, log zerolog.Logger, db *sql.DB, o *Op
 			err  error
 		)
 
-		if o == nil {
-			opts, err = newOpts()
-			if err != nil {
-				log.Error().Err(err).Msg("")
-				return
-			}
-		} else {
+		// If o is passed in, then use it, otherwise opts will
+		// remain its zero value and seeing as the elements within are
+		// all booleans, all will be false (false is the boolean zero value)
+		if o != nil {
 			opts = o
 		}
 
@@ -97,13 +115,10 @@ func LogHandler(log zerolog.Logger, db *sql.DB, o *Opts) (mw func(http.Handler) 
 				err  error
 			)
 
-			if o == nil {
-				opts, err = newOpts()
-				if err != nil {
-					log.Error().Err(err).Msg("")
-					return
-				}
-			} else {
+			// If o is passed in, then use it, otherwise opts will
+			// remain its zero value and seeing as the elements within are
+			// all booleans, all will be false (false is the boolean zero value)
+			if o != nil {
 				opts = o
 			}
 
@@ -178,13 +193,10 @@ func LogAdapter(log zerolog.Logger, db *sql.DB, o *Opts) Adapter {
 				err  error
 			)
 
-			if o == nil {
-				opts, err = newOpts()
-				if err != nil {
-					log.Error().Err(err).Msg("")
-					return
-				}
-			} else {
+			// If o is passed in, then use it, otherwise opts will
+			// remain its zero value and seeing as the elements within are
+			// all booleans, all will be false (false is the boolean zero value)
+			if o != nil {
 				opts = o
 			}
 
