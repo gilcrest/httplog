@@ -60,14 +60,14 @@ type ROpt struct {
 	Body   bool `json:"body"`
 }
 
-// newOpts constructs an Opts struct using the httpLogOpt.json file
+// FileOpts constructs an Opts struct using the httpLogOpt.json file
 // included with the library
-// TODO - this is probably a bad idea given modules - need to figure
-// out modules and get this to work. The idea here is to have a config
+// TODO - relying on GOPATH is a bad idea given modules - need to figure
+// out modules and figure out a better way. The idea here is to have a config
 // file that you can swap out on different servers - many enterprises
 // will not let you touch "source code", but allow for manipulation of
 // a config file like this... go figure
-func newOpts() (*Opts, error) {
+func FileOpts() (*Opts, error) {
 
 	g := os.Getenv("GOPATH")
 	filepath := g + "/src/github.com/gilcrest/httplog/httpLogOpt.json"
@@ -83,32 +83,4 @@ func newOpts() (*Opts, error) {
 	}
 
 	return &l, nil
-}
-
-// NewOpts constructs an Opts struct
-// By Default all logging is turned off
-func NewOpts() *Opts {
-
-	opts := new(Opts)
-
-	// Log2StdOut
-	opts.Log2StdOut.Request.Enable = false
-	opts.Log2StdOut.Request.Options.Header = false
-	opts.Log2StdOut.Request.Options.Body = false
-	opts.Log2StdOut.Response.Enable = false
-	opts.Log2StdOut.Response.Options.Header = false
-	opts.Log2StdOut.Response.Options.Body = false
-
-	// Log2DB
-	opts.Log2DB.Enable = false
-	opts.Log2DB.Request.Header = false
-	opts.Log2DB.Request.Body = false
-	opts.Log2DB.Response.Header = false
-	opts.Log2DB.Response.Body = false
-
-	// DumpRequest
-	opts.HTTPUtil.DumpRequest.Body = false
-	opts.HTTPUtil.DumpRequest.Body = false
-
-	return opts
 }
