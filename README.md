@@ -15,7 +15,7 @@ go get -u github.com/gilcrest/httplog
 
 > Note: These dependencies will be included as "vendored" dependencies once I figure out modules and how to vendor dependencies within modules. This is [Issue #2](https://github.com/gilcrest/httplog/issues/2) for the library.
 
-If you plan to use the Database Logging feature of httplog, you will need to extract the httplogDDL.sql file included in the workspace and run this on your own PostgreSQL database. I come from an Oracle background actually, so this script is pretty raw right now. I will make it better if there is interest.
+If you plan to use the Database Logging feature of httplog, you will need to extract the httplogDDL.sql file included in the workspace and run this on your own PostgreSQL database. This script is pretty raw right now and will be made better if there is interest.
 
 ## Overview
 
@@ -281,47 +281,7 @@ func RequestRawQuery(ctx context.Context) string {
 func RequestFragment(ctx context.Context) string {
 ```
 
-#### Log Config File
 
-`httpLogOpt.json`
-
-```json
-{
-    "log_json": {
-        "Request": {
-            "enable": false,
-            "Options": {
-                "header": false,
-                "body": false
-            }
-        },
-        "Response": {
-            "enable": false,
-            "Options": {
-                "header": false,
-                "body": false
-            }
-        }
-    },
-    "log_2DB": {
-        "enable": false,
-        "Request": {
-            "header": false,
-            "body": false
-        },
-        "Response": {
-            "header": false,
-            "body": false
-        }
-    },
-    "httputil": {
-        "DumpRequest": {
-            "enable": false,
-            "body": false
-        }
-    }
-}
-```
 
 ----
 
