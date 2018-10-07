@@ -14,7 +14,7 @@ func Test_FileOpts(t *testing.T) {
 		want    *Opts
 		wantErr bool
 	}{
-		{"Initialize all to false", opts, false},
+		{"Initialize all to false via httpLogOpt.json", opts, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
