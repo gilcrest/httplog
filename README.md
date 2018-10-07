@@ -6,7 +6,16 @@
 go get -u github.com/gilcrest/httplog
 ```
 
-If you plan to use the Database Logging feature of httplog, you will need to extract the httplogDDL.sql file included in the workspace and run this on your own PostgreSQL database.
+## Dependencies
+
+**httplog** has two external libraries that it depends on, listed below.
+
+- github.com/rs/zerolog
+- github.com/rs/xid
+
+> Note: These dependencies will be included as "vendored" dependencies once I figure out modules and how to vendor dependencies within modules. This is [Issue #2](https://github.com/gilcrest/httplog/issues/2) for the library.
+
+If you plan to use the Database Logging feature of httplog, you will need to extract the httplogDDL.sql file included in the workspace and run this on your own PostgreSQL database. I come from an Oracle background actually, so this script is pretty raw right now. I will make it better if there is interest.
 
 ## Overview
 
@@ -39,37 +48,7 @@ Each middleware takes a minimum of three parameters:
 
 - `o` - an `httplog.Opts` struct which has the all of the logging configurations
   - You can set this parameter to nil and httplog will use options from the `httpLogOpt.json` file
-  - If you prefer not to use the `httpLogOpt.json` file, the `httplog.NewOpts` constructor provides an Opts struct with all log flags set to false and you can set the options through code
-
-```go
-// NewOpts constructs an Opts struct
-// By Default all logging is turned off
-func NewOpts() *Opts {
-
-    opts := new(Opts)
-
-    // Log2StdOut
-    opts.Log2StdOut.Request.Enable = false
-    opts.Log2StdOut.Request.Options.Header = false
-    opts.Log2StdOut.Request.Options.Body = false
-    opts.Log2StdOut.Response.Enable = false
-    opts.Log2StdOut.Response.Options.Header = false
-    opts.Log2StdOut.Response.Options.Body = false
-
-    // Log2DB
-    opts.Log2DB.Enable = false
-    opts.Log2DB.Request.Header = false
-    opts.Log2DB.Request.Body = false
-    opts.Log2DB.Response.Header = false
-    opts.Log2DB.Response.Body = false
-
-    // DumpRequest
-    opts.HTTPUtil.DumpRequest.Body = false
-    opts.HTTPUtil.DumpRequest.Body = false
-
-    return opts
-}
-```
+  - If you prefer not to use the `httpLogOpt.json` file, simply initialize the `httplog.Opts` struct and all values are set to false (the whole struct is boolean flags and in Go, a boolean's zero value is false). You can then pick and choose which flags to turn on via code.
 
 #### Middleware Examples
 
@@ -143,7 +122,30 @@ func (s *server) routes() error {
 
 ### Configurable Logging
 
-The boolean fields found within the Opts struct type drive the rules for what logging features are turned on.  You can have one to three log styles turned on using this file (or none, if you so choose).
+The boolean fields found within the Opts struct type drive the rules for what logging features are turned on.  You can have one to three log styles turned on using this file (or none, if you so choose). Below are all the boolean options in the struct.
+
+> Note: Right now, this struct for options serves its purpose and is pretty simple. I have read Dave Cheney's great post on [Functional Options for Friendly APIs](https://dave.cheney.net/2014/10/17/functional-options-for-friendly-apis) and it's great - I may switch to this style later.
+
+```go
+// Log2StdOut
+opts.Log2StdOut.Request.Enable
+opts.Log2StdOut.Request.Options.Header
+opts.Log2StdOut.Request.Options.Body
+opts.Log2StdOut.Response.Enable
+opts.Log2StdOut.Response.Options.Header
+opts.Log2StdOut.Response.Options.Body
+
+// Log2DB
+opts.Log2DB.Enable
+opts.Log2DB.Request.Header
+opts.Log2DB.Request.Body
+opts.Log2DB.Response.Header
+opts.Log2DB.Response.Body
+
+// DumpRequest
+opts.HTTPUtil.DumpRequest.Body
+opts.HTTPUtil.DumpRequest.Body
+```
 
 1. Pass an `Opts` struct when using one of the given middleware functions. `httplog.NewOpts` will return an Opts struct with all logging turned off. You can then set whichever logging style and option you like.
 1. If you do not pass an Opts struct to one of the provided middlewares, there is code in each that will import/marshal the `httpLogOpt.json` file found in the root of the httplog library into the `Opts` struct type. You can change log configuration by altering the boolean values present in this file.
@@ -152,27 +154,27 @@ The boolean fields found within the Opts struct type drive the rules for what lo
 
 ##### JSON Request Logging
 
-Set `log_json.Request.enable` to true in the [HTTP Log Config File](#log-config-file) to enable http request logging as JSON (so long as you have properly "chained" the LogRequest handler/adapter middleware).  The output for a request looks something like:
+Set `log_json.Request.enable` in the [HTTP Log Config File](#log-config-file) or `opts.Log2StdOut.Request.Enable` to true in the `httplog.Opts` struct to enable http request logging as JSON (so long as you have properly "chained" the middleware).  The output for a request looks something like:
 
 ```json
 {"time":1517970302,"level":"info","request_id":"b9t66vma6806ln8iak8g","header_json":"{\"Accept\":[\"*/*\"],\"Accept-Encoding\":[\"gzip, deflate\"],\"Cache-Control\":[\"no-cache\"],\"Connection\":[\"keep-alive\"],\"Content-Length\":[\"129\"],\"Content-Type\":[\"application/json\"],\"Postman-Token\":[\"9949f5e5-b406-4e22-aff3-ab6ba6e7d841\"],\"User-Agent\":[\"PostmanRuntime/7.1.1\"]}","body":"{\"username\": \"repoMan\",\"mobile_ID\": \"1-800-repoman\",\"email\":\"repoman@alwaysintense.com\",\"First_Name\":\"Otto\",\"Last_Name\":\"Maddox\"}","method":"POST","scheme":"http","host":"127.0.0.1","port":"8080","path":"/api/v1/appuser","protocol":"HTTP/1.1","proto_major":1,"proto_minor":1,"Content Length":129,"Transfer-Encoding":"","Close":false,"RemoteAddr":"127.0.0.1:58689","RequestURI":"/api/v1/appuser","message":"Request received"}
 ```
 
->NOTE - the HTTP header key:value pairs and json from the body are represented as escaped JSON within the actual message. If you don't want this data, set these fields to false in the JSON config file (`httpLogOpt.json`)
+>NOTE - the HTTP header key:value pairs and json from the body are represented as escaped JSON within the actual message. If you don't want this data, set these fields to false in the JSON config file or `httplog.Opts` struct.
 
 ##### JSON Response Logging
 
-Set `log_json.Response.enable` to true in the [HTTP Log Config File](#Log-Config-File) to enable http response logging as JSON (so long as you have properly "chained" the LogResponse handler/adapter middleware).  The response output will look something like:
+Set `log_json.Response.enable` in the [HTTP Log Config File](#Log-Config-File) or `opts.Log2StdOut.Response.Enable` to true to enable http response logging as JSON. The response output will look something like:
 
 ```json
 {"time":1517970302,"level":"info","request_id":"b9t66vma6806ln8iak8g","response_code":200,"response_header":"{\"Content-Type\":[\"text/plain; charset=utf-8\"],\"Request-Id\":[\"b9t66vma6806ln8iak8g\"]}","response_body":"{\"username\":\"repoMan\",\"mobile_id\":\"1-800-repoman\",\"email\":\"repoman@alwaysintense.com\",\"first_name\":\"Otto\",\"last_name\":\"Maddox\",\"create_user_id\":\"gilcrest\",\"create_date\":\"2018-02-06T21:25:02.538322Z\",\"update_user_id\":\"\",\"update_date\":\"0001-01-01T00:00:00Z\"}\n{\"username\":\"repoMan\",\"mobile_id\":\"1-800-repoman\",\"email\":\"repoman@alwaysintense.com\",\"first_name\":\"Otto\",\"last_name\":\"Maddox\",\"create_user_id\":\"gilcrest\",\"create_date\":\"2018-02-06T21:25:02.538322Z\",\"update_user_id\":\"\",\"update_date\":\"0001-01-01T00:00:00Z\"}\n","message":"Response Sent"}
 ```
 
->NOTE - same as request - the HTTP header key:value pairs and json from the body are represented as escaped JSON within the actual message. If you don't want this data, set these fields to false in the JSON config file (`httpLogOpt.json`)
+>NOTE - same as request - the HTTP header key:value pairs and json from the body are represented as escaped JSON within the actual message. If you don't want this data, set these fields to false in the JSON config file (`httpLogOpt.json`) or `httplog.Opts` struct.
 
 #### Log Style 2: Relational DB Logging via PostgreSQL
 
-Set `log_2DB.enable` to true in the [HTTP Log Config File](#Log-Config-File) to enable Database logging to a PostgreSQL database.  The DDL is provided within the ddl directory (`audit_log.sql`) and consists of one table and one stored function. Once enabled, Request and Response information will be logged as one transaction to the database.  You can optionally choose to log request and response headers using the Options fields within the [HTTP Log Config File](#Log-Config-File).
+Set `log_2DB.enable` to true in the [HTTP Log Config File](#Log-Config-File) to enable Database logging to a PostgreSQL database.  The DDL is provided within the ddl directory (`httplogDDL.sql`) and consists of one table and one stored function. Once enabled, Request and Response information will be logged as one transaction to the database.  You can optionally choose to log request and response headers using the Options fields within the [HTTP Log Config File](#Log-Config-File) or `httplog.Opts` struct.
 
 ![Database Log](dbLog.png)
 
@@ -207,7 +209,7 @@ In total 20 fields are logged as part of the database transaction.
 
 ##### httputil.DumpRequest
 
-Set `httputil.DumpRequest.enable` to true in the [HTTP Log Config File](#Log-Config-File) to enable logging the request via the [httputil.DumpRequest](https://golang.org/pkg/net/http/httputil/#DumpRequest) method. Nothing special here, really - just providing an easy way to turn this on or off.  Output typically looks like:
+Set `httputil.DumpRequest.enable` in the [HTTP Log Config File](#log-config-file) or `opts.HTTPUtil.DumpRequest.Enable` in `httplog.Opts` to true to enable logging the request via the [httputil.DumpRequest](https://golang.org/pkg/net/http/httputil/#DumpRequest) method. Nothing special here, really - just providing an easy way to turn this on or off.  Output typically looks like:
 
 ```bash
 httputil.DumpRequest output:
@@ -224,6 +226,8 @@ User-Agent: PostmanRuntime/7.1.1
 
 {"username": "repoMan","mobile_ID": "1-800-repoman","email":"repoman@alwaysintense.com","First_Name":"Otto","Last_Name":"Maddox"}
 ```
+
+>NOTE - in order to log the body, set `httputil.DumpRequest.body` in `httplogOpt.json` or `opts.HTTPUtil.DumpRequest.Enable` in `httplog.Opts` to true. If you don't want this data, set the appropriate field to false in the JSON config file (`httpLogOpt.json`) or `httplog.Opts` struct (depending on which method you chose).
 
 ### Add Unique ID and Key Request Elements to Context
 
