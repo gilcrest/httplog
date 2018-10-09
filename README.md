@@ -281,8 +281,6 @@ func RequestRawQuery(ctx context.Context) string {
 func RequestFragment(ctx context.Context) string {
 ```
 
-
-
 ----
 
 ### Helpful Resources I've used in this library (outside of the standard, yet amazing blog.golang.org and golang.org/doc/, etc.)
