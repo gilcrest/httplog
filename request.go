@@ -15,7 +15,7 @@ import (
 
 // requestLogController determines which, if any, of the logging methods
 // you wish to use will be employed
-func requestLogController(ctx context.Context, log zerolog.Logger, aud *APIAudit, req *http.Request, opts *Opts) error {
+func requestLogController(ctx context.Context, log zerolog.Logger, t *tracker, req *http.Request, opts *Opts) error {
 
 	var err error
 
@@ -30,7 +30,7 @@ func requestLogController(ctx context.Context, log zerolog.Logger, aud *APIAudit
 	}
 
 	if opts.Log2StdOut.Request.Enable {
-		err = logReq2Stdout(log, aud, opts)
+		err = logReq2Stdout(log, t, opts)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return err
@@ -136,7 +136,7 @@ func dumpBody(req *http.Request) (string, error) {
 // 	return lgr, nil
 // }
 
-func logReq2Stdout(log zerolog.Logger, aud *APIAudit, opts *Opts) error {
+func logReq2Stdout(log zerolog.Logger, t *tracker, opts *Opts) error {
 
 	// logger, err = logFormValues(logger, req)
 	// if err != nil {
@@ -145,30 +145,30 @@ func logReq2Stdout(log zerolog.Logger, aud *APIAudit, opts *Opts) error {
 
 	// All header key:value pairs written to JSON
 	if opts.Log2StdOut.Request.Options.Header {
-		log = log.With().Str("header_json", aud.request.Header).Logger()
+		log = log.With().Str("header_json", t.request.header).Logger()
 	}
 
 	if opts.Log2StdOut.Request.Options.Body {
-		log = log.With().Str("body", aud.request.Body).Logger()
+		log = log.With().Str("body", t.request.body).Logger()
 	}
 
 	log.Info().
-		Str("request_id", aud.RequestID).
-		Str("method", aud.request.Method).
+		Str("request_id", t.requestID).
+		Str("method", t.request.method).
 		// most url.URL components split out
-		Str("scheme", aud.request.Scheme).
-		Str("host", aud.request.Host).
-		Str("port", aud.request.Port).
-		Str("path", aud.request.Path).
+		Str("scheme", t.request.scheme).
+		Str("host", t.request.host).
+		Str("port", t.request.port).
+		Str("path", t.request.path).
 		// The protocol version for incoming server requests.
-		Str("protocol", aud.request.Proto).
-		Int("proto_major", aud.request.ProtoMajor).
-		Int("proto_minor", aud.request.ProtoMinor).
-		Int64("content_length", aud.request.ContentLength).
-		Str("transfer_encoding", aud.request.TransferEncoding).
-		Bool("close", aud.request.Close).
-		Str("remote_Addr", aud.request.RemoteAddr).
-		Str("request_URI", aud.request.RequestURI).
+		Str("protocol", t.request.proto).
+		Int("proto_major", t.request.protoMajor).
+		Int("proto_minor", t.request.protoMinor).
+		Int64("content_length", t.request.contentLength).
+		Str("transfer_encoding", t.request.transferEncoding).
+		Bool("close", t.request.close).
+		Str("remote_Addr", t.request.remoteAddr).
+		Str("request_URI", t.request.requestURI).
 		Msg("Request Received")
 
 	return nil

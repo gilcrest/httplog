@@ -11,14 +11,14 @@ import (
 
 // logRespController determines which, if any, of the logging methods
 // you wish to use will be employed
-func responseLogController(ctx context.Context, log zerolog.Logger, db *sql.DB, aud *APIAudit, opts *Opts) error {
+func responseLogController(ctx context.Context, log zerolog.Logger, db *sql.DB, t *tracker, opts *Opts) error {
 
 	if opts.Log2StdOut.Response.Enable {
-		logResp2Stdout(log, aud)
+		logResp2Stdout(log, t)
 	}
 
 	if opts.Log2DB.Enable {
-		err := logReqResp2Db(ctx, db, aud, opts)
+		err := logReqResp2Db(ctx, db, t, opts)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 			return err
@@ -27,22 +27,22 @@ func responseLogController(ctx context.Context, log zerolog.Logger, db *sql.DB, 
 	return nil
 }
 
-func logResp2Stdout(log zerolog.Logger, aud *APIAudit) {
+func logResp2Stdout(log zerolog.Logger, t *tracker) {
 
 	log.Debug().Msg("logResponse started")
 	defer log.Debug().Msg("logResponse ended")
 
 	log.Info().
-		Str("request_id", aud.RequestID).
-		Int("response_code", aud.ResponseCode).
-		Str("response_header", aud.response.Header).
-		Str("response_body", aud.response.Body).
+		Str("request_id", t.requestID).
+		Int("response_code", t.responseCode).
+		Str("response_header", t.response.header).
+		Str("response_body", t.response.body).
 		Msg("Response Sent")
 }
 
 // logReqResp2Db creates a record in the api.audit_log table
 // using a stored function
-func logReqResp2Db(ctx context.Context, db *sql.DB, aud *APIAudit, opts *Opts) error {
+func logReqResp2Db(ctx context.Context, db *sql.DB, t *tracker, opts *Opts) error {
 
 	var (
 		rowsInserted int
@@ -60,7 +60,7 @@ func logReqResp2Db(ctx context.Context, db *sql.DB, aud *APIAudit, opts *Opts) e
 	if opts.Log2DB.Request.Header {
 		// This empty string to nil conversion is probably
 		// not necessary, but just in case to avoid db exception
-		reqHdr = strNil(aud.request.Header)
+		reqHdr = strNil(t.request.header)
 	}
 	// default reqBody variable to nil
 	// if the Request Body logging option is enabled for db logging
@@ -68,7 +68,7 @@ func logReqResp2Db(ctx context.Context, db *sql.DB, aud *APIAudit, opts *Opts) e
 	// switch it to nil, otherwise write it to the variable
 	reqBody = nil
 	if opts.Log2DB.Request.Body {
-		reqBody = strNil(aud.request.Body)
+		reqBody = strNil(t.request.body)
 	}
 	// default respHdr variable to nil
 	// if the Response Header logging option is enabled for db logging
@@ -76,7 +76,7 @@ func logReqResp2Db(ctx context.Context, db *sql.DB, aud *APIAudit, opts *Opts) e
 	// switch it to nil, otherwise write it to the variable
 	respHdr = nil
 	if opts.Log2DB.Response.Header {
-		respHdr = strNil(aud.response.Header)
+		respHdr = strNil(t.response.header)
 	}
 	// default respBody variable to nil
 	// if the Response Body logging option is enabled for db logging
@@ -84,12 +84,12 @@ func logReqResp2Db(ctx context.Context, db *sql.DB, aud *APIAudit, opts *Opts) e
 	// switch it to nil, otherwise write it to the variable
 	respBody = nil
 	if opts.Log2DB.Response.Body {
-		respBody = strNil(aud.response.Body)
+		respBody = strNil(t.response.body)
 	}
 
 	// time.Duration is in nanoseconds,
 	// need to do below math for milliseconds
-	durMS := aud.Duration / time.Millisecond
+	durMS := t.duration / time.Millisecond
 
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
@@ -125,26 +125,26 @@ func logReqResp2Db(ctx context.Context, db *sql.DB, aud *APIAudit, opts *Opts) e
 	defer stmt.Close()
 
 	rows, err := stmt.QueryContext(ctx,
-		aud.RequestID,             //$1
-		aud.ClientID,              //$2
-		aud.TimeStarted,           //$3
-		aud.ResponseCode,          //$4
-		aud.TimeFinished,          //$5
-		durMS,                     //$6
-		aud.request.Proto,         //$7
-		aud.request.ProtoMajor,    //$8
-		aud.request.ProtoMinor,    //$9
-		aud.request.Method,        //$10
-		aud.request.Scheme,        //$11
-		aud.request.Host,          //$12
-		aud.request.Port,          //$13
-		aud.request.Path,          //$14
-		aud.request.RemoteAddr,    //$15
-		aud.request.ContentLength, //$16
-		reqHdr,   //$17
-		reqBody,  //$18
-		respHdr,  //$19
-		respBody) //$20
+		t.requestID,             //$1
+		t.clientID,              //$2
+		t.timeStarted,           //$3
+		t.responseCode,          //$4
+		t.timeFinished,          //$5
+		durMS,                   //$6
+		t.request.proto,         //$7
+		t.request.protoMajor,    //$8
+		t.request.protoMinor,    //$9
+		t.request.method,        //$10
+		t.request.scheme,        //$11
+		t.request.host,          //$12
+		t.request.port,          //$13
+		t.request.path,          //$14
+		t.request.remoteAddr,    //$15
+		t.request.contentLength, //$16
+		reqHdr,                  //$17
+		reqBody,                 //$18
+		respHdr,                 //$19
+		respBody)                //$20
 
 	if err != nil {
 		log.Error().Err(err).Msg("")

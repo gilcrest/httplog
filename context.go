@@ -22,18 +22,18 @@ var (
 	requestFragment = contextKey("RequestFragment")
 )
 
-func setRequest2Context(ctx context.Context, aud *APIAudit) context.Context {
-	ctx = SetRequestHost(ctx, aud)
-	ctx = SetRequestPort(ctx, aud)
-	ctx = SetRequestPath(ctx, aud)
-	ctx = SetRequestRawQuery(ctx, aud)
-	ctx = SetRequestFragment(ctx, aud)
+func setRequest2Context(ctx context.Context, aud *tracker) context.Context {
+	ctx = setRequestHost(ctx, aud)
+	ctx = setRequestPort(ctx, aud)
+	ctx = setRequestPath(ctx, aud)
+	ctx = setRequestRawQuery(ctx, aud)
+	ctx = setRequestFragment(ctx, aud)
 
 	return ctx
 }
 
 // SetRequestID adds a unique ID as RequestID to the context
-func SetRequestID(ctx context.Context) context.Context {
+func setRequestID(ctx context.Context) context.Context {
 	// get byte Array representation of guid from xid package (12 bytes)
 	guid := xid.New()
 
@@ -53,8 +53,8 @@ func RequestID(ctx context.Context) string {
 }
 
 // SetRequestHost adds the request host to the context
-func SetRequestHost(ctx context.Context, audit *APIAudit) context.Context {
-	host := audit.request.Host
+func setRequestHost(ctx context.Context, audit *tracker) context.Context {
+	host := audit.request.host
 	ctx = context.WithValue(ctx, requestHost, host)
 	return ctx
 }
@@ -66,8 +66,8 @@ func RequestHost(ctx context.Context) string {
 }
 
 // SetRequestPort adds the request port to the context
-func SetRequestPort(ctx context.Context, audit *APIAudit) context.Context {
-	port := audit.request.Port
+func setRequestPort(ctx context.Context, audit *tracker) context.Context {
+	port := audit.request.port
 	ctx = context.WithValue(ctx, requestPort, port)
 	return ctx
 }
@@ -79,8 +79,8 @@ func RequestPort(ctx context.Context) string {
 }
 
 // SetRequestPath adds the request URL to the context
-func SetRequestPath(ctx context.Context, audit *APIAudit) context.Context {
-	path := audit.request.Path
+func setRequestPath(ctx context.Context, audit *tracker) context.Context {
+	path := audit.request.path
 	ctx = context.WithValue(ctx, requestPath, path)
 	return ctx
 }
@@ -92,8 +92,8 @@ func RequestPath(ctx context.Context) string {
 }
 
 // SetRequestRawQuery adds the request Query string details to the context
-func SetRequestRawQuery(ctx context.Context, audit *APIAudit) context.Context {
-	query := audit.request.RawQuery
+func setRequestRawQuery(ctx context.Context, audit *tracker) context.Context {
+	query := audit.request.rawQuery
 	ctx = context.WithValue(ctx, requestRawQuery, query)
 	return ctx
 }
@@ -105,8 +105,8 @@ func RequestRawQuery(ctx context.Context) string {
 }
 
 // SetRequestFragment adds the request Fragment details to the context
-func SetRequestFragment(ctx context.Context, audit *APIAudit) context.Context {
-	frag := audit.request.Fragment
+func setRequestFragment(ctx context.Context, audit *tracker) context.Context {
+	frag := audit.request.fragment
 	ctx = context.WithValue(ctx, requestFragment, frag)
 	return ctx
 }
