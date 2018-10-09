@@ -4,13 +4,16 @@ import (
 	"context"
 )
 
-// Audit struct should be used for all responses
+// Audit struct can be included as part of an http response body.
+// This struct sends back the Unique ID generated upon receiving a
+// request as well as echoes back the URL information to help with
+// debugging.
 type Audit struct {
 	RequestID string    `json:"id"`
 	URL       *AuditURL `json:"url"`
 }
 
-// AuditURL has url info
+// AuditURL has URL info which can be included as part of an http response body
 type AuditURL struct {
 	RequestHost     string `json:"host,omitempty"`
 	RequestPort     string `json:"port,omitempty"`
@@ -20,7 +23,7 @@ type AuditURL struct {
 }
 
 // AuditOpts allow you to to turn on or off different elements
-// of the URL
+// of the AuditURL.
 type AuditOpts struct {
 	Host     bool
 	Port     bool
@@ -29,7 +32,12 @@ type AuditOpts struct {
 	Fragment bool
 }
 
-// NewAudit is a constructor for the Audit struct
+// NewAudit is a constructor for the Audit struct. Elements added to the
+// context through the provided middleware functions can be retrieved
+// through the various helper functions or if you prefer in this one
+// convenient struct. If nil is passed for the opts parameter, all options
+// are set to true. If you prefer not to have a particular element of the URL
+// in the response, pass in the AuditOpts struct with that element set to false
 func NewAudit(ctx context.Context, opts *AuditOpts) (*Audit, error) {
 	audit := new(Audit)
 	aurl := new(AuditURL)
