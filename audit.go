@@ -9,8 +9,8 @@ import (
 // request as well as echoes back the URL information to help with
 // debugging.
 type Audit struct {
-	RequestID string    `json:"id"`
-	URL       *AuditURL `json:"url"`
+	RequestID string   `json:"id"`
+	URL       AuditURL `json:"url,omitempty"`
 }
 
 // AuditURL has URL info which can be included as part of an http response body
@@ -35,39 +35,29 @@ type AuditOpts struct {
 // NewAudit is a constructor for the Audit struct. Elements added to the
 // context through the provided middleware functions can be retrieved
 // through the various helper functions or if you prefer in this one
-// convenient struct. If nil is passed for the opts parameter, all options
-// are set to true. If you prefer not to have a particular element of the URL
-// in the response, pass in the AuditOpts struct with that element set to false
+// convenient struct. If you just pass an initialized AuditOpt struct to the
+// opts parameter, all options are set to false. All options are boolean flags,
+// and the zero value for booleans is false. For the elements you want to appear
+// in the response, pass in the AuditOpts struct with that element set to true
 func NewAudit(ctx context.Context, opts *AuditOpts) (*Audit, error) {
 	audit := new(Audit)
-	aurl := new(AuditURL)
-	o := new(AuditOpts)
-
-	if opts == nil {
-		o.Host = true
-		o.Port = true
-		o.Path = true
-		o.Query = true
-		o.Fragment = true
-	} else {
-		o = opts
-	}
+	aurl := AuditURL{}
 
 	audit.RequestID = RequestID(ctx)
 
-	if o.Host {
+	if opts.Host {
 		aurl.RequestHost = RequestHost(ctx)
 	}
-	if o.Port {
+	if opts.Port {
 		aurl.RequestPort = RequestPort(ctx)
 	}
-	if o.Path {
+	if opts.Path {
 		aurl.RequestPath = RequestPath(ctx)
 	}
-	if o.Query {
+	if opts.Query {
 		aurl.RequestRawQuery = RequestRawQuery(ctx)
 	}
-	if o.Fragment {
+	if opts.Fragment {
 		aurl.RequestFragment = RequestFragment(ctx)
 	}
 
