@@ -2,6 +2,7 @@ package httplog
 
 import (
 	"context"
+	"errors"
 )
 
 // Audit struct can be included as part of an http response body.
@@ -40,6 +41,11 @@ type AuditOpts struct {
 // and the zero value for booleans is false. For the elements you want to appear
 // in the response, pass in the AuditOpts struct with that element set to true
 func NewAudit(ctx context.Context, opts *AuditOpts) (*Audit, error) {
+
+	if opts == nil {
+		return nil, errors.New("opts (*AuditOpts) parameter cannot be nil")
+	}
+
 	audit := new(Audit)
 	aurl := AuditURL{}
 
