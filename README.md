@@ -8,7 +8,7 @@ go get -u github.com/gilcrest/httplog
 
 ## GoDoc
 
-[GoDoc](https://godoc.org/github.com/gilcrest/httplog)
+[https://godoc.org/github.com/gilcrest/httplog](https://godoc.org/github.com/gilcrest/httplog)
 
 ## External Dependencies
 
