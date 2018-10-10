@@ -26,16 +26,17 @@ type DumpRequest struct {
 	Body   bool `json:"body"`
 }
 
-// Log2StdOut struct holds the options for logging
-// requests and responses to stdout (using zerolog)
+// Log2StdOut (Log to Standard Output) struct holds the options
+// for logging requests and responses to stdout (using zerolog)
 type Log2StdOut struct {
 	Request  L2SOpt
 	Response L2SOpt
 }
 
-// L2SOpt is the log2StdOut Options
-// Enable should be true if you want to write the log, set
-// the rOpt Header and Body accordingly if you want to write those
+// L2SOpt struct holds the log2StdOut options.
+// Enable should be true if you want httplog to write to stdout, set
+// the ROpt Header and Body booleans accordingly if you want to write
+// those
 type L2SOpt struct {
 	Enable  bool `json:"enable"`
 	Options ROpt
