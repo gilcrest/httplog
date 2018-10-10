@@ -29,7 +29,7 @@ httplog has logic to turn on/off logging based on options you can either pass in
 
 httplog offers three middleware choices, each of which adhere to fairly common middleware patterns: a simple HandlerFunc (`LogHandlerFunc`), a function (`LogHandler`) that takes a handler and returns a handler (aka Constructor) (`func (http.Handler) http.Handler`) often used with [alice](https://github.com/justinas/alice) and finally a function (`LogAdapter`) that returns an Adapter type (based on [Mat Ryer’s post](https://medium.com/@matryer/writing-middleware-in-golang-and-how-go-makes-it-so-much-fun-4375c1246e81)). An `httplog.Adapt` function and `httplog.Adapter` type are provided.
 
-Beyond logging request and response elements, **httplog** creates a unique id for each incoming request (using [xid](https://github.com/rs/xid)) and sets it (and a few other key request elements) into the request context. You can access these context items using provided helper functions, including a function that returns an audit struct you can add to response payloads that provide clients with helpful information for support.
+Beyond logging request and response elements, **httplog** creates a unique id for each incoming request (using [xid](https://github.com/rs/xid)) and sets it (and a few other key request elements) into the request context. You can access these context items using provided helper functions, including a function that returns an `httplog.Audit` struct which bundles all these items for response payloads to provide clients with helpful information for support.
 
 ## Features
 
@@ -284,6 +284,30 @@ func RequestRawQuery(ctx context.Context) string {
 // RequestFragment gets the request Fragment details from the context
 func RequestFragment(ctx context.Context) string {
 ```
+
+### Audit struct for response payload
+
+Some APIs may find it helpful to echo back certain request elements or helpful contextual information in the response payload. **httplog** provides [httplog.Audit](https://godoc.org/github.com/gilcrest/httplog#Audit) for just this purpose. Use constructor function `httplog.NewAudit` to initialize this struct. The unique Request ID will always be sent back as part of the struct -- the other request elements are optional and can be turned on/off using the `httplog.AuditOpts` config struct. Below is a sample response, with the audit struct included to give an idea of how it can be used. The example below is from the [go-API-template](https://github.com/gilcrest/go-API-template) repository which has examples of this audit struct in use.
+
+```json
+{
+    "username": "15",
+    "mobile_id": "1-800-repoman",
+    "email": "repoman@alwaysintense.com",
+    "first_name": "Otto",
+    "last_name": "Maddox",
+    "update_user_id": "chillcrest",
+    "created": 1539138260,
+    "audit": {
+        "id": "beum5l708qml02e3hvag",
+        "url": {
+            "host": "127.0.0.1",
+            "port": "8080",
+            "path": "/api/v1/adapter/user",
+            "query": "qskey1=fake&qskey2=test"
+        }
+    }
+}```
 
 ----
 
