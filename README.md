@@ -6,7 +6,11 @@
 go get -u github.com/gilcrest/httplog
 ```
 
-## Dependencies
+## GoDoc
+
+[GoDoc](https://godoc.org/github.com/gilcrest/httplog)
+
+## External Dependencies
 
 **httplog** has two external libraries that it depends on, listed below.
 
