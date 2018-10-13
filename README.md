@@ -311,7 +311,7 @@ Some APIs may find it helpful to echo back certain request elements or helpful c
 }
 ```
 
-A snippet from the `handleUserCreate` handler function within [go-API-template](https://github.com/gilcrest/go-API-template) shows how to setup the `AuditOpts` struct and turn on a few options as well as plugging it into the response.
+A snippet from the `handleUserCreate` handler function within [go-API-template](https://github.com/gilcrest/go-API-template) shows how to setup the `AuditOpts` struct and turn on a few options as well as plugging `httplog.Audit` into the response.
 
 ```go
     // create new AuditOpts struct and set options to true that you
