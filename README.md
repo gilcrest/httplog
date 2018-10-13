@@ -40,6 +40,7 @@ Beyond logging request and response elements, **httplog** creates a unique id fo
   - [Log Style 3](#log-style-3-httputil-dumpRequest-or-dumpResponse): httputil DumpRequest or DumpResponse - there's not much to this, really - httplog just allows you to turn these standard library functions on or off through the configuration options
 - [Add Unique ID and Key Request Elements to Context](#add-unique-id-and-key-request-elements-to-context)
 - [Retrieve Unique ID and Key Request Elements from Context](#retrieve-unique-id-and-key-request-elements-from-context)
+- [Audit Struct for Response Payload](#audit-struct-for-response-payload)
 
 ### Middleware
 
@@ -285,7 +286,7 @@ func RequestRawQuery(ctx context.Context) string {
 func RequestFragment(ctx context.Context) string {
 ```
 
-### Audit struct for response payload
+### Audit Struct for Response Payload
 
 Some APIs may find it helpful to echo back certain request elements or helpful contextual information in the response payload. **httplog** provides [httplog.Audit](https://godoc.org/github.com/gilcrest/httplog#Audit) for just this purpose. Use constructor function `httplog.NewAudit` to initialize this struct. The unique Request ID will always be sent back as part of the struct -- the other request elements are optional and can be turned on/off using the `httplog.AuditOpts` config struct. Below is a sample response, with the audit struct included to give an idea of how it can be used. The example below is from the [go-API-template](https://github.com/gilcrest/go-API-template) repository which has examples of this audit struct in use.
 
@@ -308,6 +309,42 @@ Some APIs may find it helpful to echo back certain request elements or helpful c
         }
     }
 }
+```
+
+A snippet from the `handleUserCreate` handler function within [go-API-template](https://github.com/gilcrest/go-API-template) shows how to setup the `AuditOpts` struct and turn on a few options as well as plugging it into the response.
+
+```go
+    aopt := new(httplog.AuditOpts)
+    aopt.Host = true
+    aopt.Port = true
+    aopt.Path = true
+    aopt.Query = true
+
+    // If we successfully committed the db transaction, we can consider this
+    // transaction successful and return a response with the response body
+    aud, err := httplog.NewAudit(ctx, aopt)
+    if err != nil {
+        err = HTTPErr{
+            Code: http.StatusInternalServerError,
+            Kind: errors.Other,
+            Err:  err,
+        }
+        httpError(w, err)
+        return
+    }
+
+    resp := new(response)
+    resp.Audit = aud
+    resp.Username = usr.Username()
+    resp.MobileID = usr.MobileID()
+    resp.Email = usr.Email()
+    resp.FirstName = usr.FirstName()
+    resp.LastName = usr.LastName()
+    resp.UpdateUserID = usr.UpdateUserID()
+    resp.UpdateUnixTime = usr.UpdateTimestamp().Unix()
+
+    // Encode usr struct to JSON for the response body
+    json.NewEncoder(w).Encode(*resp)
 ```
 
 ----
