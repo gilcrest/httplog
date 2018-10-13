@@ -236,7 +236,7 @@ User-Agent: PostmanRuntime/7.1.1
 
 ### Add Unique ID and Key Request Elements to Context
 
-**httplog** middleware creates a unique ID to track each request. In addition, it adds several request elements to the request Context that can be accessed with helper functions later.
+**httplog** middleware creates a unique ID to track each request. In addition, it adds several request elements to the request context that can be accessed with helper functions later.
 
 #### Unique Request ID
 
