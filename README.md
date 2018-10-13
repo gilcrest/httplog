@@ -288,7 +288,7 @@ func RequestFragment(ctx context.Context) string {
 
 ### Audit Struct for Response Payload
 
-Some APIs may find it helpful to echo back certain request elements or helpful contextual information in the response payload. **httplog** provides [httplog.Audit](https://godoc.org/github.com/gilcrest/httplog#Audit) for just this purpose. Use constructor function `httplog.NewAudit` to initialize this struct. The unique Request ID will always be sent back as part of the struct -- the other request elements are optional and can be turned on/off using the `httplog.AuditOpts` config struct. Below is a sample response, with the audit struct included to give an idea of how it can be used. The example below is from the [go-API-template](https://github.com/gilcrest/go-API-template) repository which has examples of this audit struct in use.
+Some APIs may find it helpful to echo back certain request elements or helpful contextual information in the response payload. **httplog** provides [httplog.Audit](https://godoc.org/github.com/gilcrest/httplog#Audit) for just this purpose. Use constructor function `httplog.NewAudit` to initialize this struct. The unique Request ID will always be sent back as part of the struct -- the other request elements are optional and can be turned on/off using the `httplog.AuditOpts` config struct. Below is a sample response with the audit struct included to give an idea of how it can be used. The example below is from the [go-API-template](https://github.com/gilcrest/go-API-template) repository which has examples of this audit struct in use.
 
 ```json
 {
@@ -358,7 +358,6 @@ A snippet from the `handleUserCreate` handler function within [go-API-template](
 websites/youtube
 
 - [JustforFunc](https://www.youtube.com/channel/UC_BzFbxG2za3bp5NRRRXJSw)
-
 - [Go By Example](https://gobyexample.com/)
 
 Books
