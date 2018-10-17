@@ -27,7 +27,7 @@ If you plan to use the Database Logging feature of httplog, you will need to ext
 
 httplog has logic to turn on/off logging based on options you can either pass in to the middleware handler or from a JSON input file included with the library.
 
-httplog offers three middleware choices, each of which adhere to fairly common middleware patterns: a simple HandlerFunc (`LogHandlerFunc`), a function (`LogHandler`) that takes a handler and returns a handler (aka Constructor) (`func (http.Handler) http.Handler`) often used with [alice](https://github.com/justinas/alice) and finally, a function (`LogAdapter`), which returns an Adapter type (based on [Mat Ryer’s post](https://medium.com/@matryer/writing-middleware-in-golang-and-how-go-makes-it-so-much-fun-4375c1246e81)). An `httplog.Adapt` function and `httplog.Adapter` type are provided.
+httplog offers three middleware choices, each of which adhere to fairly common middleware patterns: a simple HandlerFunc (`LogHandlerFunc`), a function (`LogHandler`) which takes a handler and returns a handler (often used with [alice](https://github.com/justinas/alice)) and finally, a function (`LogAdapter`), which returns an Adapter type (based on [Mat Ryer’s post](https://medium.com/@matryer/writing-middleware-in-golang-and-how-go-makes-it-so-much-fun-4375c1246e81)). An `httplog.Adapt` function and `httplog.Adapter` type are provided for the latter.
 
 Beyond logging request and response elements, **httplog** creates a unique id for each incoming request (using [xid](https://github.com/rs/xid)) and sets it (and a few other key request elements) into the request context. You can access these context items using provided helper functions, including a function that returns an `httplog.Audit` struct which bundles all these items for response payloads to provide clients with helpful information for support.
 
@@ -49,7 +49,7 @@ Each middleware takes a minimum of three parameters:
 - `log` - an instance of zerolog.logger
 
 - `db` - a pointer to a sql database (PostgreSQL)
-  - You can set this parameter to nil if you're not planning to log to PostgreSQL
+  - You can set this parameter to nil if you are not planning to log to PostgreSQL
 
 - `o` - an `httplog.Opts` struct which has the all of the logging configurations
   - You can set this parameter to nil and httplog will use options from the `httpLogOpt.json` file
