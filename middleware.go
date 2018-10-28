@@ -44,6 +44,12 @@ func LogHandlerFunc(next http.HandlerFunc, log zerolog.Logger, db *sql.DB, o *Op
 		// all booleans, all will be false (false is the boolean zero value)
 		if o != nil {
 			opts = o
+		} else {
+			opts, err = FileOpts()
+			if err != nil {
+				http.Error(w, "Unable to load logging options from file", http.StatusBadRequest)
+				return
+			}
 		}
 
 		// Pull the context from the request
@@ -120,6 +126,12 @@ func LogHandler(log zerolog.Logger, db *sql.DB, o *Opts) (mw func(http.Handler) 
 			// all booleans, all will be false (false is the boolean zero value)
 			if o != nil {
 				opts = o
+			} else {
+				opts, err = FileOpts()
+				if err != nil {
+					http.Error(w, "Unable to load logging options from file", http.StatusBadRequest)
+					return
+				}
 			}
 
 			// Pull the context from the request
@@ -198,6 +210,12 @@ func LogAdapter(log zerolog.Logger, db *sql.DB, o *Opts) Adapter {
 			// all booleans, all will be false (false is the boolean zero value)
 			if o != nil {
 				opts = o
+			} else {
+				opts, err = FileOpts()
+				if err != nil {
+					http.Error(w, "Unable to load logging options from file", http.StatusBadRequest)
+					return
+				}
 			}
 
 			// Pull the context from the request
