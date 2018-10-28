@@ -23,6 +23,7 @@ package httplog
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 
@@ -47,7 +48,8 @@ func LogHandlerFunc(next http.HandlerFunc, log zerolog.Logger, db *sql.DB, o *Op
 		} else {
 			opts, err = FileOpts()
 			if err != nil {
-				http.Error(w, "Unable to load logging options from file", http.StatusBadRequest)
+				errStr := fmt.Sprintf("Unable to load logging options from file, error = %s", err.Error())
+				http.Error(w, errStr, http.StatusBadRequest)
 				return
 			}
 		}
@@ -129,7 +131,8 @@ func LogHandler(log zerolog.Logger, db *sql.DB, o *Opts) (mw func(http.Handler) 
 			} else {
 				opts, err = FileOpts()
 				if err != nil {
-					http.Error(w, "Unable to load logging options from file", http.StatusBadRequest)
+					errStr := fmt.Sprintf("Unable to load logging options from file, error = %s", err.Error())
+					http.Error(w, errStr, http.StatusBadRequest)
 					return
 				}
 			}
@@ -213,7 +216,8 @@ func LogAdapter(log zerolog.Logger, db *sql.DB, o *Opts) Adapter {
 			} else {
 				opts, err = FileOpts()
 				if err != nil {
-					http.Error(w, "Unable to load logging options from file", http.StatusBadRequest)
+					errStr := fmt.Sprintf("Unable to load logging options from file, error = %s", err.Error())
+					http.Error(w, errStr, http.StatusBadRequest)
 					return
 				}
 			}
