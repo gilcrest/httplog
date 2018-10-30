@@ -45,7 +45,7 @@ func LogHandlerFunc(next http.HandlerFunc, log zerolog.Logger, db *sql.DB, o *Op
 		if o != nil {
 			opts = o
 		} else {
-			http.Error(w, "Unsupported: nil cannot be passed currently for *Opts until bug #6 has been resolved", http.StatusBadRequest)
+			http.Error(w, "gilcrest/httplog unsupported: nil cannot be passed currently for *Opts until bug #6 has been resolved", http.StatusBadRequest)
 			return
 			// opts, err = FileOpts()
 			// if err != nil {
@@ -130,7 +130,7 @@ func LogHandler(log zerolog.Logger, db *sql.DB, o *Opts) (mw func(http.Handler) 
 			if o != nil {
 				opts = o
 			} else {
-				http.Error(w, "Unsupported: nil cannot be passed currently for *Opts until bug #6 has been resolved", http.StatusBadRequest)
+				http.Error(w, "gilcrest/httplog unsupported: nil cannot be passed currently for *Opts until bug #6 has been resolved", http.StatusBadRequest)
 				return
 				// opts, err = FileOpts()
 				// if err != nil {
@@ -217,7 +217,7 @@ func LogAdapter(log zerolog.Logger, db *sql.DB, o *Opts) Adapter {
 			if o != nil {
 				opts = o
 			} else {
-				http.Error(w, "Unsupported: nil cannot be passed currently for *Opts until bug #6 has been resolved", http.StatusBadRequest)
+				http.Error(w, "gilcrest/httplog unsupported: nil cannot be passed currently for *Opts until bug #6 has been resolved", http.StatusBadRequest)
 				return
 				// opts, err = FileOpts()
 				// if err != nil {
