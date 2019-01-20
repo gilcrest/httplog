@@ -95,16 +95,58 @@ func (o *Opts) Option(opts ...option) {
 	}
 }
 
-// L2DB sets the options for logging to the database.
+// LogRequest2Stdout sets the options for logging http requests to
+// Standard Output (stdout).
 // enable turns on the functionality
+// header logs http request headers
+// body logs the http request body
+func LogRequest2Stdout(enable bool, header bool, body bool) option {
+	return func(o *Opts) {
+		o.Log2StdOut.Request.Enable = enable
+		o.Log2StdOut.Request.Options.Header = header
+		o.Log2StdOut.Request.Options.Body = body
+	}
+}
+
+// LogResponse2Stdout sets the options for logging http responses to
+// Standard Output (stdout).
+// enable turns on the functionality
+// header logs http response headers
+// body logs the http response body
+func LogResponse2Stdout(enable bool, header bool, body bool) option {
+	return func(o *Opts) {
+		o.Log2StdOut.Response.Enable = enable
+		o.Log2StdOut.Response.Options.Header = header
+		o.Log2StdOut.Response.Options.Body = body
+	}
+}
+
+// Log2Database sets the options for logging to the database.
+// enable turns on the functionality - if this is set to false, the
+// parameters afterward are irrelevant as nothing will log.
 // reqHdr logs http request headers
+// reqBody logs the http request body
 // respHdr logs http response headers
 // respBody logs the http response body
-func L2DB(enable bool, reqHdr bool, respHdr bool, respBody bool) option {
+func Log2Database(enable bool, reqHdr bool, reqBody bool, respHdr bool, respBody bool) option {
 	return func(o *Opts) {
 		o.Log2DB.Enable = enable
 		o.Log2DB.Request.Header = reqHdr
+		o.Log2DB.Request.Body = reqHdr
 		o.Log2DB.Response.Header = respHdr
 		o.Log2DB.Response.Body = respBody
+	}
+}
+
+// LogRequestViaHTTPUtil sets the options for logging requests
+// using the standard HTTPUtil package
+// enable turns on the functionality
+// body logs the http request body
+// This is just wrapper functionality and in hindsight is really
+// kinda silly to include, but alas...
+func LogRequestViaHTTPUtil(enable bool, body bool) option {
+	return func(o *Opts) {
+		o.HTTPUtil.DumpRequest.Enable = enable
+		o.HTTPUtil.DumpRequest.Body = body
 	}
 }
