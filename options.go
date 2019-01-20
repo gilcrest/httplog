@@ -85,3 +85,26 @@ func FileOpts() (*Opts, error) {
 
 	return &l, nil
 }
+
+type option func(*Opts)
+
+// Option sets the options specified.
+func (o *Opts) Option(opts ...option) {
+	for _, opt := range opts {
+		opt(o)
+	}
+}
+
+// L2DB sets the options for logging to the database.
+// enable turns on the functionality
+// reqHdr logs http request headers
+// respHdr logs http response headers
+// respBody logs the http response body
+func L2DB(enable bool, reqHdr bool, respHdr bool, respBody bool) option {
+	return func(o *Opts) {
+		o.Log2DB.Enable = enable
+		o.Log2DB.Request.Header = reqHdr
+		o.Log2DB.Response.Header = respHdr
+		o.Log2DB.Response.Body = respBody
+	}
+}
