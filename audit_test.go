@@ -8,18 +8,14 @@ import (
 
 func TestNewAudit(t *testing.T) {
 	type args struct {
-		ctx  context.Context
-		opts *AuditOpts
+		ctx context.Context
 	}
 
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, requestID, "test123")
 	// ctx = context.WithValue(ctx, requestHost, "testhost")
 
-	opt := new(AuditOpts)
-	// opt.Host = false
-
-	arg := args{ctx, opt}
+	arg := args{ctx}
 
 	aud := new(Audit)
 	aud.RequestID = "test123"
@@ -35,7 +31,7 @@ func TestNewAudit(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewAudit(tt.args.ctx, tt.args.opts)
+			got, err := NewAudit(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewAudit() error = %v, wantErr %v", err, tt.wantErr)
 				return
