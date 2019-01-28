@@ -138,7 +138,12 @@ func newAPIAudit(ctx context.Context, log zerolog.Logger, req *http.Request) (co
 
 	// Sets a Unique ID into the context
 	ctx = setRequestID(ctx)
-	t.requestID = RequestID(ctx)
+	id, err := RequestID(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("")
+		return ctx, nil, err
+	}
+	t.requestID = id
 	t.request.proto = req.Proto
 	t.request.protoMajor = req.ProtoMajor
 	t.request.protoMinor = req.ProtoMinor
