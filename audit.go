@@ -2,7 +2,6 @@ package httplog
 
 import (
 	"context"
-	"errors"
 )
 
 // Audit struct can be included as part of an http response body.
@@ -40,31 +39,34 @@ type AuditOpts struct {
 // opts parameter, all options are set to false. All options are boolean flags,
 // and the zero value for booleans is false. For the elements you want to appear
 // in the response, pass in the AuditOpts struct with that element set to true
-func NewAudit(ctx context.Context, opts *AuditOpts) (*Audit, error) {
-
-	if opts == nil {
-		return nil, errors.New("opts (*AuditOpts) parameter cannot be nil")
-	}
+func NewAudit(ctx context.Context) (*Audit, error) {
 
 	audit := new(Audit)
+	id, err := RequestID(ctx)
+	if err == nil {
+		audit.RequestID = id
+	}
 	aurl := AuditURL{}
 
-	audit.RequestID = RequestID(ctx)
+	host, err := RequestHost(ctx)
+	if err == nil {
+		aurl.RequestHost = host
 
-	if opts.Host {
-		aurl.RequestHost = RequestHost(ctx)
 	}
-	if opts.Port {
-		aurl.RequestPort = RequestPort(ctx)
+
+	post, err := RequestPort(ctx)
+	if err == nil {
+		aurl.RequestPort = post
 	}
-	if opts.Path {
-		aurl.RequestPath = RequestPath(ctx)
+
+	path, err := RequestPath(ctx)
+	if err == nil {
+		aurl.RequestPath = path
 	}
-	if opts.Query {
-		aurl.RequestRawQuery = RequestRawQuery(ctx)
-	}
-	if opts.Fragment {
-		aurl.RequestFragment = RequestFragment(ctx)
+
+	rrq, err := RequestRawQuery(ctx)
+	if err == nil {
+		aurl.RequestRawQuery = rrq
 	}
 
 	audit.URL = aurl
