@@ -22,23 +22,10 @@ type AuditURL struct {
 	RequestFragment string `json:"fragment,omitempty"`
 }
 
-// AuditOpts allow you to to turn on or off different elements
-// of the AuditURL.
-type AuditOpts struct {
-	Host     bool
-	Port     bool
-	Path     bool
-	Query    bool
-	Fragment bool
-}
-
 // NewAudit is a constructor for the Audit struct. Elements added to the
 // context through the provided middleware functions can be retrieved
 // through the various helper functions or if you prefer in this one
-// convenient struct. If you just pass an initialized AuditOpt struct to the
-// opts parameter, all options are set to false. All options are boolean flags,
-// and the zero value for booleans is false. For the elements you want to appear
-// in the response, pass in the AuditOpts struct with that element set to true
+// convenient struct.
 func NewAudit(ctx context.Context) (*Audit, error) {
 
 	audit := new(Audit)
