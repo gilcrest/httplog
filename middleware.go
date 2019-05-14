@@ -103,12 +103,14 @@ func LogHandlerFunc(next http.HandlerFunc, log zerolog.Logger, db *sql.DB, o *Op
 		err = aud.setResponse(log, rec)
 		if err != nil {
 			http.Error(w, "Unable to set response", http.StatusBadRequest)
+			return
 		}
 
 		// call responseLogController to determine if and where to log
 		err = responseLogController(ctx, log, db, aud, opts)
 		if err != nil {
 			http.Error(w, "Error from responseLogController", http.StatusBadRequest)
+			return
 		}
 	}
 }
@@ -188,12 +190,14 @@ func LogHandler(log zerolog.Logger, db *sql.DB, o *Opts) (mw func(http.Handler) 
 			err = aud.setResponse(log, rec)
 			if err != nil {
 				http.Error(w, "Unable to set response", http.StatusBadRequest)
+				return
 			}
 
 			// call responseLogController to determine if and where to log
 			err = responseLogController(ctx, log, db, aud, opts)
 			if err != nil {
 				http.Error(w, "Error from responseLogController", http.StatusBadRequest)
+				return
 			}
 		})
 	}
@@ -275,12 +279,14 @@ func LogAdapter(log zerolog.Logger, db *sql.DB, o *Opts) Adapter {
 			err = aud.setResponse(log, rec)
 			if err != nil {
 				http.Error(w, "Unable to set response", http.StatusBadRequest)
+				return
 			}
 
 			// call responseLogController to determine if and where to log
 			err = responseLogController(ctx, log, db, aud, opts)
 			if err != nil {
 				http.Error(w, "Error from responseLogController", http.StatusBadRequest)
+				return
 			}
 		})
 	}
