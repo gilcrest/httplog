@@ -23,7 +23,6 @@ package httplog
 
 import (
 	"database/sql"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 
@@ -107,17 +106,13 @@ func LogHandlerFunc(next http.HandlerFunc, log zerolog.Logger, db *sql.DB, o *Op
 		// set the response data in the APIAudit object
 		err = aud.setResponse(log, rec)
 		if err != nil {
-			err = errors.RE(http.StatusInternalServerError, errors.Internal, errors.E("Unable to set response"))
-			errors.HTTPError(w, err)
-			return
+			log.Warn().Err(err).Msg("Error from setResponse in httplog")
 		}
 
 		// call responseLogController to determine if and where to log
 		err = responseLogController(ctx, log, db, aud, opts)
 		if err != nil {
-			err = errors.RE(http.StatusInternalServerError, errors.Internal, errors.E("Error from responseLogController"))
-			errors.HTTPError(w, err)
-			return
+			log.Warn().Err(err).Msg("Error from responseLogController in httplog")
 		}
 	}
 }
@@ -196,26 +191,17 @@ func LogHandler(log zerolog.Logger, db *sql.DB, o *Opts) (mw func(http.Handler) 
 			// it's needed for SetResponse
 			rec.Body.Write(b)
 
-			fmt.Println("GOT HERE")
-
 			// set the response data in the APIAudit object
 			err = aud.setResponse(log, rec)
 			if err != nil {
-				err = errors.RE(http.StatusInternalServerError, errors.Internal, errors.E("Unable to set response"))
-				errors.HTTPError(w, err)
-				return
+				log.Warn().Err(err).Msg("Error from setResponse in httplog")
 			}
-			fmt.Println("GOT HERE2")
 
 			// call responseLogController to determine if and where to log
 			err = responseLogController(ctx, log, db, aud, opts)
 			if err != nil {
-				err = errors.RE(http.StatusInternalServerError, errors.Internal, errors.E("Error from responseLogController"))
-				errors.HTTPError(w, err)
-				return
+				log.Warn().Err(err).Msg("Error from responseLogController in httplog")
 			}
-			fmt.Println("GOT HERE3")
-
 		})
 	}
 	return
@@ -298,17 +284,13 @@ func LogAdapter(log zerolog.Logger, db *sql.DB, o *Opts) Adapter {
 			// set the response data in the APIAudit object
 			err = aud.setResponse(log, rec)
 			if err != nil {
-				err = errors.RE(http.StatusInternalServerError, errors.Internal, errors.E("Unable to set response"))
-				errors.HTTPError(w, err)
-				return
+				log.Warn().Err(err).Msg("Error from setResponse in httplog")
 			}
 
 			// call responseLogController to determine if and where to log
 			err = responseLogController(ctx, log, db, aud, opts)
 			if err != nil {
-				err = errors.RE(http.StatusInternalServerError, errors.Internal, errors.E("Error from responseLogController"))
-				errors.HTTPError(w, err)
-				return
+				log.Warn().Err(err).Msg("Error from responseLogController in httplog")
 			}
 		})
 	}
