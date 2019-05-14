@@ -23,6 +23,7 @@ package httplog
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 
@@ -195,6 +196,8 @@ func LogHandler(log zerolog.Logger, db *sql.DB, o *Opts) (mw func(http.Handler) 
 			// it's needed for SetResponse
 			rec.Body.Write(b)
 
+			fmt.Println("GOT HERE")
+
 			// set the response data in the APIAudit object
 			err = aud.setResponse(log, rec)
 			if err != nil {
@@ -202,6 +205,7 @@ func LogHandler(log zerolog.Logger, db *sql.DB, o *Opts) (mw func(http.Handler) 
 				errors.HTTPError(w, err)
 				return
 			}
+			fmt.Println("GOT HERE2")
 
 			// call responseLogController to determine if and where to log
 			err = responseLogController(ctx, log, db, aud, opts)
@@ -210,6 +214,8 @@ func LogHandler(log zerolog.Logger, db *sql.DB, o *Opts) (mw func(http.Handler) 
 				errors.HTTPError(w, err)
 				return
 			}
+			fmt.Println("GOT HERE3")
+
 		})
 	}
 	return
