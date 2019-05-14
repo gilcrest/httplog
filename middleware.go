@@ -26,6 +26,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
+	"github.com/gilcrest/errors"
 	"github.com/rs/zerolog"
 )
 
@@ -45,7 +46,8 @@ func LogHandlerFunc(next http.HandlerFunc, log zerolog.Logger, db *sql.DB, o *Op
 		if o != nil {
 			opts = o
 		} else {
-			http.Error(w, "gilcrest/httplog unsupported: nil cannot be passed currently for *Opts until bug #6 has been resolved", http.StatusBadRequest)
+			err = errors.RE(http.StatusInternalServerError, errors.Internal, errors.E("gilcrest/httplog unsupported: nil cannot be passed currently for *Opts until bug #6 has been resolved"))
+			errors.HTTPError(w, err)
 			return
 			// opts, err = FileOpts()
 			// if err != nil {
@@ -62,7 +64,8 @@ func LogHandlerFunc(next http.HandlerFunc, log zerolog.Logger, db *sql.DB, o *Op
 		// to begin the API response timer
 		ctx, aud, err := newAPIAudit(ctx, log, req)
 		if err != nil {
-			http.Error(w, "Unable to log request", http.StatusBadRequest)
+			err = errors.RE(http.StatusInternalServerError, errors.Internal, errors.E("Unable to log request"))
+			errors.HTTPError(w, err)
 			return
 		}
 
@@ -74,7 +77,8 @@ func LogHandlerFunc(next http.HandlerFunc, log zerolog.Logger, db *sql.DB, o *Op
 		// you wish to use will be employed (based on the options passed in)
 		err = requestLogController(ctx, log, aud, req, opts)
 		if err != nil {
-			http.Error(w, "Unable to log request", http.StatusBadRequest)
+			err = errors.RE(http.StatusInternalServerError, errors.Internal, errors.E("Unable to log request"))
+			errors.HTTPError(w, err)
 			return
 		}
 
@@ -102,14 +106,16 @@ func LogHandlerFunc(next http.HandlerFunc, log zerolog.Logger, db *sql.DB, o *Op
 		// set the response data in the APIAudit object
 		err = aud.setResponse(log, rec)
 		if err != nil {
-			http.Error(w, "Unable to set response", http.StatusBadRequest)
+			err = errors.RE(http.StatusInternalServerError, errors.Internal, errors.E("Unable to set response"))
+			errors.HTTPError(w, err)
 			return
 		}
 
 		// call responseLogController to determine if and where to log
 		err = responseLogController(ctx, log, db, aud, opts)
 		if err != nil {
-			http.Error(w, "Error from responseLogController", http.StatusBadRequest)
+			err = errors.RE(http.StatusInternalServerError, errors.Internal, errors.E("Error from responseLogController"))
+			errors.HTTPError(w, err)
 			return
 		}
 	}
@@ -132,7 +138,8 @@ func LogHandler(log zerolog.Logger, db *sql.DB, o *Opts) (mw func(http.Handler) 
 			if o != nil {
 				opts = o
 			} else {
-				http.Error(w, "gilcrest/httplog unsupported: nil cannot be passed currently for *Opts until bug #6 has been resolved", http.StatusBadRequest)
+				err = errors.RE(http.StatusInternalServerError, errors.Internal, errors.E("gilcrest/httplog unsupported: nil cannot be passed currently for *Opts until bug #6 has been resolved"))
+				errors.HTTPError(w, err)
 				return
 				// opts, err = FileOpts()
 				// if err != nil {
@@ -149,7 +156,8 @@ func LogHandler(log zerolog.Logger, db *sql.DB, o *Opts) (mw func(http.Handler) 
 			// to begin the API response timer
 			ctx, aud, err := newAPIAudit(ctx, log, req)
 			if err != nil {
-				http.Error(w, "Unable to log request", http.StatusBadRequest)
+				err = errors.RE(http.StatusInternalServerError, errors.Internal, errors.E("Unable to log request"))
+				errors.HTTPError(w, err)
 				return
 			}
 
@@ -161,7 +169,8 @@ func LogHandler(log zerolog.Logger, db *sql.DB, o *Opts) (mw func(http.Handler) 
 			// you wish to use will be employed (based on the options passed in)
 			err = requestLogController(ctx, log, aud, req, opts)
 			if err != nil {
-				http.Error(w, "Unable to log request", http.StatusBadRequest)
+				err = errors.RE(http.StatusInternalServerError, errors.Internal, errors.E("Unable to log request"))
+				errors.HTTPError(w, err)
 				return
 			}
 
@@ -189,14 +198,16 @@ func LogHandler(log zerolog.Logger, db *sql.DB, o *Opts) (mw func(http.Handler) 
 			// set the response data in the APIAudit object
 			err = aud.setResponse(log, rec)
 			if err != nil {
-				http.Error(w, "Unable to set response", http.StatusBadRequest)
+				err = errors.RE(http.StatusInternalServerError, errors.Internal, errors.E("Unable to set response"))
+				errors.HTTPError(w, err)
 				return
 			}
 
 			// call responseLogController to determine if and where to log
 			err = responseLogController(ctx, log, db, aud, opts)
 			if err != nil {
-				http.Error(w, "Error from responseLogController", http.StatusBadRequest)
+				err = errors.RE(http.StatusInternalServerError, errors.Internal, errors.E("Error from responseLogController"))
+				errors.HTTPError(w, err)
 				return
 			}
 		})
@@ -221,7 +232,8 @@ func LogAdapter(log zerolog.Logger, db *sql.DB, o *Opts) Adapter {
 			if o != nil {
 				opts = o
 			} else {
-				http.Error(w, "gilcrest/httplog unsupported: nil cannot be passed currently for *Opts until bug #6 has been resolved", http.StatusBadRequest)
+				err = errors.RE(http.StatusInternalServerError, errors.Internal, errors.E("gilcrest/httplog unsupported: nil cannot be passed currently for *Opts until bug #6 has been resolved"))
+				errors.HTTPError(w, err)
 				return
 				// opts, err = FileOpts()
 				// if err != nil {
@@ -238,7 +250,8 @@ func LogAdapter(log zerolog.Logger, db *sql.DB, o *Opts) Adapter {
 			// to begin the API response timer
 			ctx, aud, err := newAPIAudit(ctx, log, req)
 			if err != nil {
-				http.Error(w, "Unable to log request", http.StatusBadRequest)
+				err = errors.RE(http.StatusInternalServerError, errors.Internal, errors.E("Unable to log request"))
+				errors.HTTPError(w, err)
 				return
 			}
 			aud.startTimer()
@@ -250,7 +263,8 @@ func LogAdapter(log zerolog.Logger, db *sql.DB, o *Opts) Adapter {
 			// It will also populate the APIAudit struct based on the incoming request
 			err = requestLogController(ctx, log, aud, req, opts)
 			if err != nil {
-				http.Error(w, "Unable to log request", http.StatusBadRequest)
+				err = errors.RE(http.StatusInternalServerError, errors.Internal, errors.E("Unable to log request"))
+				errors.HTTPError(w, err)
 				return
 			}
 
@@ -278,14 +292,16 @@ func LogAdapter(log zerolog.Logger, db *sql.DB, o *Opts) Adapter {
 			// set the response data in the APIAudit object
 			err = aud.setResponse(log, rec)
 			if err != nil {
-				http.Error(w, "Unable to set response", http.StatusBadRequest)
+				err = errors.RE(http.StatusInternalServerError, errors.Internal, errors.E("Unable to set response"))
+				errors.HTTPError(w, err)
 				return
 			}
 
 			// call responseLogController to determine if and where to log
 			err = responseLogController(ctx, log, db, aud, opts)
 			if err != nil {
-				http.Error(w, "Error from responseLogController", http.StatusBadRequest)
+				err = errors.RE(http.StatusInternalServerError, errors.Internal, errors.E("Error from responseLogController"))
+				errors.HTTPError(w, err)
 				return
 			}
 		})
