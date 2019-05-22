@@ -96,7 +96,7 @@ func logReqResp2Db(ctx context.Context, db *sql.DB, t *tracker, opts *Opts) erro
 		return err
 	}
 	// Prepare the sql statement using bind variables
-	stmt, err := tx.PrepareContext(ctx, `select api.log_request (
+	stmt, err := tx.PrepareContext(ctx, `select app.http_audit_log (
 		p_request_id => $1,
 		p_client_id => $2,
 		p_request_timestamp => $3,
