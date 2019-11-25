@@ -328,7 +328,7 @@ A snippet from the `handleUserCreate` handler function within [go-API-template](
     if err != nil {
         err = HTTPErr{
             Code: http.StatusInternalServerError,
-            Kind: errors.Other,
+            Kind: errs.Other,
             Err:  err,
         }
         httpError(w, err)
