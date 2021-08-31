@@ -2,8 +2,8 @@ package httplog
 
 import (
 	"context"
+	"github.com/pkg/errors"
 
-	"github.com/gilcrest/errs"
 	"github.com/rs/xid"
 )
 
@@ -49,13 +49,11 @@ func setRequestID(ctx context.Context) context.Context {
 
 // RequestID gets the Request ID from the context.
 func RequestID(ctx context.Context) (string, error) {
-	const op errs.Op = "httplog/RequestID"
-
 	requestIDstr, ok := ctx.Value(requestID).(string)
 	if ok {
 		return requestIDstr, nil
 	}
-	return requestIDstr, errs.E(op, "RequestID is not set properly to context")
+	return requestIDstr, errors.New("RequestID is not set properly to context")
 }
 
 // SetRequestHost adds the request host to the context
@@ -67,13 +65,11 @@ func setRequestHost(ctx context.Context, audit *tracker) context.Context {
 
 // RequestHost gets the request host from the context
 func RequestHost(ctx context.Context) (string, error) {
-	const op errs.Op = "httplog/RequestHost"
-
 	url, ok := ctx.Value(requestHost).(string)
 	if ok {
 		return url, nil
 	}
-	return url, errs.E(op, "RequestHost is not set properly to context")
+	return url, errors.New("RequestHost is not set properly to context")
 }
 
 // SetRequestPort adds the request port to the context
@@ -85,13 +81,11 @@ func setRequestPort(ctx context.Context, audit *tracker) context.Context {
 
 // RequestPort gets the request port from the context
 func RequestPort(ctx context.Context) (string, error) {
-	const op errs.Op = "httplog/RequestPort"
-
 	url, ok := ctx.Value(requestPort).(string)
 	if ok {
 		return url, nil
 	}
-	return url, errs.E(op, "RequestPort is not set properly to context")
+	return url, errors.New("RequestPort is not set properly to context")
 }
 
 // SetRequestPath adds the request URL to the context
@@ -103,13 +97,11 @@ func setRequestPath(ctx context.Context, audit *tracker) context.Context {
 
 // RequestPath gets the request URL from the context
 func RequestPath(ctx context.Context) (string, error) {
-	const op errs.Op = "httplog/RequestPath"
-
 	url, ok := ctx.Value(requestPath).(string)
 	if ok {
 		return url, nil
 	}
-	return url, errs.E(op, "RequestPath is not set properly to context")
+	return url, errors.New("RequestPath is not set properly to context")
 }
 
 // SetRequestRawQuery adds the request Query string details to the context
@@ -121,13 +113,11 @@ func setRequestRawQuery(ctx context.Context, audit *tracker) context.Context {
 
 // RequestRawQuery gets the request Query string details from the context
 func RequestRawQuery(ctx context.Context) (string, error) {
-	const op errs.Op = "httplog/RequestRawQuery"
-
 	url, ok := ctx.Value(requestRawQuery).(string)
 	if ok {
 		return url, nil
 	}
-	return url, errs.E(op, "RequestRawQuery is not set properly to context")
+	return url, errors.New("RequestRawQuery is not set properly to context")
 }
 
 // SetRequestFragment adds the request Fragment details to the context
@@ -139,11 +129,9 @@ func setRequestFragment(ctx context.Context, audit *tracker) context.Context {
 
 // RequestFragment gets the request Fragment details from the context
 func RequestFragment(ctx context.Context) (string, error) {
-	const op errs.Op = "httplog/RequestFragment"
-
 	url, ok := ctx.Value(requestFragment).(string)
 	if ok {
 		return url, nil
 	}
-	return url, errs.E(op, "RequestFragment is not set properly to context")
+	return url, errors.New("RequestFragment is not set properly to context")
 }

@@ -19,6 +19,10 @@
 // these context items using provided helper functions, including a function
 // that returns an audit struct you can add to response payloads that provide
 // clients with helpful information for support.
+//
+// !!!!WARNING!!!! - This package works, but is something I wrote a long time
+// ago and really needs to be updated. I logged Issue #8 to some day address
+// this.
 package httplog
 
 import (
@@ -26,13 +30,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/gilcrest/errs"
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+
+	"github.com/gilcrest/httplog/errs"
 )
 
 // LogHandlerFunc middleware records and logs as much as possible about an
 // incoming HTTP request and response
-func LogHandlerFunc(next http.HandlerFunc, log zerolog.Logger, db *sql.DB, o *Opts) http.HandlerFunc {
+func LogHandlerFunc(next http.HandlerFunc, logger zerolog.Logger, db *sql.DB, o *Opts) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 
 		var (
@@ -46,8 +52,7 @@ func LogHandlerFunc(next http.HandlerFunc, log zerolog.Logger, db *sql.DB, o *Op
 		if o != nil {
 			opts = o
 		} else {
-			err = errs.RE(http.StatusInternalServerError, errs.Internal, errs.E("gilcrest/httplog unsupported: nil cannot be passed currently for *Opts until bug #6 has been resolved"))
-			errs.HTTPError(w, err)
+			errs.HTTPErrorResponse(w, logger, errs.E(errs.Internal, "gilcrest/httplog unsupported: nil cannot be passed currently for *Opts until bug #6 has been resolved"))
 			return
 			// opts, err = FileOpts()
 			// if err != nil {
@@ -62,10 +67,9 @@ func LogHandlerFunc(next http.HandlerFunc, log zerolog.Logger, db *sql.DB, o *Op
 
 		// Create an instance of APIaudit and pass it to startTimer
 		// to begin the API response timer
-		ctx, aud, err := newAPIAudit(ctx, log, req)
+		ctx, aud, err := newAPIAudit(ctx, logger, req)
 		if err != nil {
-			err = errs.RE(http.StatusInternalServerError, errs.Internal, errs.E("Unable to log request"))
-			errs.HTTPError(w, err)
+			errs.HTTPErrorResponse(w, logger, errs.E(errs.Internal, "Unable to log request"))
 			return
 		}
 
@@ -75,10 +79,9 @@ func LogHandlerFunc(next http.HandlerFunc, log zerolog.Logger, db *sql.DB, o *Op
 
 		// RequestLogController determines which of the logging methods
 		// you wish to use will be employed (based on the options passed in)
-		err = requestLogController(ctx, log, aud, req, opts)
+		err = requestLogController(ctx, logger, aud, req, opts)
 		if err != nil {
-			err = errs.RE(http.StatusInternalServerError, errs.Internal, errs.E("Unable to log request"))
-			errs.HTTPError(w, err)
+			errs.HTTPErrorResponse(w, logger, errs.E(errs.Internal, "Unable to log request"))
 			return
 		}
 
@@ -87,7 +90,7 @@ func LogHandlerFunc(next http.HandlerFunc, log zerolog.Logger, db *sql.DB, o *Op
 
 		// copy everything from response recorder
 		// to actual response writer
-		for k, v := range rec.HeaderMap {
+		for k, v := range rec.Header() {
 			w.Header()[k] = v
 		}
 		w.WriteHeader(rec.Code)
@@ -104,13 +107,13 @@ func LogHandlerFunc(next http.HandlerFunc, log zerolog.Logger, db *sql.DB, o *Op
 		rec.Body.Write(b)
 
 		// set the response data in the APIAudit object
-		err = aud.setResponse(log, rec)
+		err = aud.setResponse(logger, rec)
 		if err != nil {
 			log.Warn().Err(err).Msg("Error from setResponse in httplog")
 		}
 
 		// call responseLogController to determine if and where to log
-		err = responseLogController(ctx, log, db, aud, opts)
+		err = responseLogController(ctx, logger, db, aud, opts)
 		if err != nil {
 			log.Warn().Err(err).Msg("Error from responseLogController in httplog")
 		}
@@ -119,7 +122,7 @@ func LogHandlerFunc(next http.HandlerFunc, log zerolog.Logger, db *sql.DB, o *Op
 
 // LogHandler records and logs as much as possible about an
 // incoming HTTP request and response
-func LogHandler(log zerolog.Logger, db *sql.DB, o *Opts) (mw func(http.Handler) http.Handler) {
+func LogHandler(logger zerolog.Logger, db *sql.DB, o *Opts) (mw func(http.Handler) http.Handler) {
 	mw = func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 
@@ -134,8 +137,7 @@ func LogHandler(log zerolog.Logger, db *sql.DB, o *Opts) (mw func(http.Handler) 
 			if o != nil {
 				opts = o
 			} else {
-				err = errs.RE(http.StatusInternalServerError, errs.Internal, errs.E("gilcrest/httplog unsupported: nil cannot be passed currently for *Opts until bug #6 has been resolved"))
-				errs.HTTPError(w, err)
+				errs.HTTPErrorResponse(w, logger, errs.E(errs.Internal, "gilcrest/httplog unsupported: nil cannot be passed currently for *Opts until bug #6 has been resolved"))
 				return
 				// opts, err = FileOpts()
 				// if err != nil {
@@ -150,10 +152,9 @@ func LogHandler(log zerolog.Logger, db *sql.DB, o *Opts) (mw func(http.Handler) 
 
 			// Create an instance of APIaudit and pass it to startTimer
 			// to begin the API response timer
-			ctx, aud, err := newAPIAudit(ctx, log, req)
+			ctx, aud, err := newAPIAudit(ctx, logger, req)
 			if err != nil {
-				err = errs.RE(http.StatusInternalServerError, errs.Internal, errs.E("Unable to log request"))
-				errs.HTTPError(w, err)
+				errs.HTTPErrorResponse(w, logger, errs.E(errs.Internal, "Unable to log request"))
 				return
 			}
 
@@ -163,10 +164,9 @@ func LogHandler(log zerolog.Logger, db *sql.DB, o *Opts) (mw func(http.Handler) 
 
 			// RequestLogController determines which of the logging methods
 			// you wish to use will be employed (based on the options passed in)
-			err = requestLogController(ctx, log, aud, req, opts)
+			err = requestLogController(ctx, logger, aud, req, opts)
 			if err != nil {
-				err = errs.RE(http.StatusInternalServerError, errs.Internal, errs.E("Unable to log request"))
-				errs.HTTPError(w, err)
+				errs.HTTPErrorResponse(w, logger, errs.E(errs.Internal, "Unable to log request"))
 				return
 			}
 
@@ -175,7 +175,7 @@ func LogHandler(log zerolog.Logger, db *sql.DB, o *Opts) (mw func(http.Handler) 
 
 			// copy everything from response recorder
 			// to actual response writer
-			for k, v := range rec.HeaderMap {
+			for k, v := range rec.Header() {
 				w.Header()[k] = v
 			}
 			w.WriteHeader(rec.Code)
@@ -192,13 +192,13 @@ func LogHandler(log zerolog.Logger, db *sql.DB, o *Opts) (mw func(http.Handler) 
 			rec.Body.Write(b)
 
 			// set the response data in the APIAudit object
-			err = aud.setResponse(log, rec)
+			err = aud.setResponse(logger, rec)
 			if err != nil {
 				log.Warn().Err(err).Msg("Error from setResponse in httplog")
 			}
 
 			// call responseLogController to determine if and where to log
-			err = responseLogController(ctx, log, db, aud, opts)
+			err = responseLogController(ctx, logger, db, aud, opts)
 			if err != nil {
 				log.Warn().Err(err).Msg("Error from responseLogController in httplog")
 			}
@@ -210,7 +210,7 @@ func LogHandler(log zerolog.Logger, db *sql.DB, o *Opts) (mw func(http.Handler) 
 // LogAdapter records and logs as much as possible about an
 // incoming HTTP request and response using the Adapter pattern
 // Found adapter pattern in a Mat Ryer post
-func LogAdapter(log zerolog.Logger, db *sql.DB, o *Opts) Adapter {
+func LogAdapter(logger zerolog.Logger, db *sql.DB, o *Opts) Adapter {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 
@@ -225,8 +225,7 @@ func LogAdapter(log zerolog.Logger, db *sql.DB, o *Opts) Adapter {
 			if o != nil {
 				opts = o
 			} else {
-				err = errs.RE(http.StatusInternalServerError, errs.Internal, errs.E("gilcrest/httplog unsupported: nil cannot be passed currently for *Opts until bug #6 has been resolved"))
-				errs.HTTPError(w, err)
+				errs.HTTPErrorResponse(w, logger, errs.E(errs.Internal, "Unable to log request"))
 				return
 				// opts, err = FileOpts()
 				// if err != nil {
@@ -241,10 +240,9 @@ func LogAdapter(log zerolog.Logger, db *sql.DB, o *Opts) Adapter {
 
 			// Create an instance of APIaudit and pass it to startTimer
 			// to begin the API response timer
-			ctx, aud, err := newAPIAudit(ctx, log, req)
+			ctx, aud, err := newAPIAudit(ctx, logger, req)
 			if err != nil {
-				err = errs.RE(http.StatusInternalServerError, errs.Internal, errs.E("Unable to log request"))
-				errs.HTTPError(w, err)
+				errs.HTTPErrorResponse(w, logger, errs.E(errs.Internal, "Unable to log request"))
 				return
 			}
 			aud.startTimer()
@@ -254,10 +252,9 @@ func LogAdapter(log zerolog.Logger, db *sql.DB, o *Opts) Adapter {
 			// RequestLogController determines which of the logging methods
 			// you wish to use will be employed (based on the options passed in)
 			// It will also populate the APIAudit struct based on the incoming request
-			err = requestLogController(ctx, log, aud, req, opts)
+			err = requestLogController(ctx, logger, aud, req, opts)
 			if err != nil {
-				err = errs.RE(http.StatusInternalServerError, errs.Internal, errs.E("Unable to log request"))
-				errs.HTTPError(w, err)
+				errs.HTTPErrorResponse(w, logger, errs.E(errs.Internal, "Unable to log request"))
 				return
 			}
 
@@ -266,7 +263,7 @@ func LogAdapter(log zerolog.Logger, db *sql.DB, o *Opts) Adapter {
 
 			// copy everything from response recorder
 			// to actual response writer
-			for k, v := range rec.HeaderMap {
+			for k, v := range rec.Header() {
 				w.Header()[k] = v
 			}
 			w.WriteHeader(rec.Code)
@@ -283,13 +280,13 @@ func LogAdapter(log zerolog.Logger, db *sql.DB, o *Opts) Adapter {
 			rec.Body.Write(b)
 
 			// set the response data in the APIAudit object
-			err = aud.setResponse(log, rec)
+			err = aud.setResponse(logger, rec)
 			if err != nil {
 				log.Warn().Err(err).Msg("Error from setResponse in httplog")
 			}
 
 			// call responseLogController to determine if and where to log
-			err = responseLogController(ctx, log, db, aud, opts)
+			err = responseLogController(ctx, logger, db, aud, opts)
 			if err != nil {
 				log.Warn().Err(err).Msg("Error from responseLogController in httplog")
 			}
