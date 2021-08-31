@@ -2,7 +2,6 @@ package httplog
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 )
 
@@ -63,23 +62,18 @@ type ROpt struct {
 
 // FileOpts constructs an Opts struct using the httpLogOpt.json file
 // included with the library
-// TODO - relying on GOPATH is a bad idea given modules - need to figure
-// out modules and figure out a better way. The idea here is to have a config
-// file that you can swap out on different servers - many enterprises
-// will not let you touch "source code", but allow for manipulation of
-// a config file like this... go figure
+// The idea here is to have a config file that you can swap out on
+// different servers - many enterprises will not let you touch
+// "source code", but allow for manipulation of a config file like this... go figure
 func FileOpts() (*Opts, error) {
 
-	g := os.Getenv("GOPATH")
-	filepath := g + "/src/github.com/gilcrest/httplog/httpLogOpt.json"
-
-	raw, err := ioutil.ReadFile(filepath)
+	b, err := os.ReadFile("httpLogOpt.json")
 	if err != nil {
 		return nil, err
 	}
 
 	var l Opts
-	if err := json.Unmarshal(raw, &l); err != nil {
+	if err := json.Unmarshal(b, &l); err != nil {
 		return nil, err
 	}
 
