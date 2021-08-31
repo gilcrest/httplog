@@ -1,5 +1,7 @@
 # httplog - HTTP Request and Response Logging
 
+!!!!WARNING!!!! - This package works, but is something I wrote a long time ago and really needs to be updated. I logged Issue #8 to some day address this.
+
 ## Installation
 
 ```go
@@ -8,16 +10,15 @@ go get -u github.com/gilcrest/httplog
 
 ## GoDoc
 
-[https://godoc.org/github.com/gilcrest/httplog](https://godoc.org/github.com/gilcrest/httplog)
+[https://pkg.go.dev/github.com/gilcrest/httplog](https://pkg.go.dev/github.com/gilcrest/httplog)
 
 ## External Dependencies
 
 **httplog** has two external libraries that it depends on, listed below.
 
+- github.com/pkg/errors
 - github.com/rs/zerolog
 - github.com/rs/xid
-
-> Note: These dependencies will be included as "vendored" dependencies once I figure out modules and how to vendor dependencies within modules. This is [Issue #2](https://github.com/gilcrest/httplog/issues/2) for the library.
 
 If you plan to use the Database Logging feature of httplog, you will need to extract the httplogDDL.sql file included in the workspace and run this on your own PostgreSQL database. This script is pretty raw right now and will be made better if there is interest.
 
